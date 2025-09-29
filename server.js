@@ -15,6 +15,12 @@ const build = async (opts = {}) => {
     },
     ...opts,
   });
+  await fastify.register(require("@fastify/cors"), {
+ origin: ["http://localhost:5173", "http://localhost:3001"],
+credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+});
   await fastify.register(require("@fastify/swagger"), {
     openapi: {
       info: {
@@ -29,37 +35,43 @@ const build = async (opts = {}) => {
     exposeRoute: true,
   });
   fastify.register(require("@fastify/swagger-ui"), {
-    routePrefix: '/docs',
-  uiConfig: {
-    docExpansion: 'none', 
-    deepLinking: true,
-  },
-  staticCSP: true,
-  transformStaticCSP: (header) => header, 
-  uiHooks: {
-    onRequest: (request, reply, next) => { next(); },
-    preHandler: (request, reply, next) => { next(); }
-  },
-  theme: {
-    title: "Masttec Moulds API Docs"
-  },
-  css: [
-    {
-      filename: 'custom.css',
-      content: `
+    routePrefix: "/docs",
+    uiConfig: {
+      docExpansion: "none",
+      deepLinking: true,
+    },
+    staticCSP: true,
+    transformStaticCSP: (header) => header,
+    uiHooks: {
+      onRequest: (request, reply, next) => {
+        next();
+      },
+      preHandler: (request, reply, next) => {
+        next();
+      },
+    },
+    theme: {
+      title: "Masttec Moulds API Docs",
+    },
+    css: [
+      {
+        filename: "custom.css",
+        content: `
         .swagger-ui .topbar { background-color: #2c3e50; }
         .swagger-ui .topbar a span { color: #f1c40f !important; }
         .swagger-ui .info .title { color: #7e23bfff !important; }
         .swagger-ui .scheme-container { background: #ecf0f1; }
-      `
-    }
-  ]
-  });
-  await fastify.register(require("@fastify/cors"), {
-    origin: "*",
+      `,
+      },
+    ],
   });
 
-  fastify.register(require("@fastify/multipart"));
+  await fastify.register(require("@fastify/multipart"), {
+    attachFieldsToBody: true,
+    limits: {
+      fileSize: 50 * 1024 * 1024, // 50 MB
+    },
+  });
 
   fastify.register(require("@fastify/jwt"), {
     secret: process.env.JWT_SECRET,

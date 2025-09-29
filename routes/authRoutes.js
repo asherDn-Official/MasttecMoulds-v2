@@ -1,4 +1,4 @@
-const authController = require('../contollers/authController');
+const authController = require('../controllers/authController');
 
 const authRoutes = async (fastify, options) => {
 

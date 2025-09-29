@@ -3,14 +3,7 @@ const bcrypt = require("bcryptjs");
 
 const employeeSchema = new mongoose.Schema(
   {
-    employeeFirstName: {
-      type: String,
-      required: true,
-      trim: true,
-      minlength: 3,
-      maxlength: 100,
-    },
-    employeeLastName: {
+    employeeName: {
       type: String,
       required: true,
       trim: true,
@@ -54,6 +47,7 @@ const employeeSchema = new mongoose.Schema(
     mailId: {
       type: String,
       unique: true,
+      sparse: true,
       lowercase: true,
       trim: true,
       match: /^\S+@\S+\.\S+$/,
@@ -100,7 +94,7 @@ const employeeSchema = new mongoose.Schema(
 
 employeeSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
-  this.password = await bcrypt.hash(this.password, 10);
+  this.password = await bcrypt.hash(this.password, 10); 
   next();
 });
 

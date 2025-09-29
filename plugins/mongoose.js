@@ -4,10 +4,7 @@ const mongoose = require('mongoose');
 async function mongoosePlugin(fastify, options) {
   try {
     mongoose.set('strictQuery', false);
-    await mongoose.connect(process.env.MONGO_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(process.env.MONGO_URI);
     fastify.log.info('MongoDB connected successfully.');
     fastify.decorate('mongoose', mongoose);
   } catch (err) {
@@ -16,4 +13,4 @@ async function mongoosePlugin(fastify, options) {
   }
 }
 
-module.exports = fp(mongoosePlugin);
+module.exports = fp(mongoosePlugin); 
