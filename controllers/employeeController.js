@@ -18,6 +18,18 @@ exports.create = async (req, reply) => {
   try {
     const { body } = req;
 
+    // ✅ FIX: parse nested JSON strings safely
+    if (body.bankDetails && typeof body.bankDetails.value === "string") {
+      try {
+        body.bankDetails.value = JSON.parse(body.bankDetails.value);
+      } catch (err) {
+        console.warn("⚠️ Invalid JSON in bankDetails.value:", err.message);
+      }
+    }
+
+    // ✅ (Optional) — if you have other JSON-like nested fields later, do the same parsing for them here
+    // Example: if you add `body.documents.value` as a JSON string later, parse similarly
+
     const employeeData = {
       employeeName: body.employeeName.value,
       employeeId: body.employeeId.value,
@@ -32,6 +44,7 @@ exports.create = async (req, reply) => {
       mobileNumber: body.mobileNumber?.value,
       mailId: body.mailId?.value,
       address: body.address?.value,
+      // ✅ Now this will work — it's properly parsed as object
       bankDetails: body.bankDetails?.value,
       PANNumber: body.PANNumber?.value,
       aadhaarNo: body.aadhaarNo?.value,
@@ -46,9 +59,7 @@ exports.create = async (req, reply) => {
       employeePicture: await saveFile(body.employeePicture),
       documents: {
         addressProof: await saveFile(body.documents?.addressProof),
-        educationCertificate: await saveFile(
-          body.documents?.educationCertificate
-        ),
+        educationCertificate: await saveFile(body.documents?.educationCertificate),
         passbookProof: await saveFile(body.documents?.passbookProof),
         PANCardProof: await saveFile(body.documents?.PANCardProof),
       },
@@ -70,6 +81,7 @@ exports.create = async (req, reply) => {
           "Employee with this ID, mobile, email, PAN, or Aadhaar already exists",
       });
     }
+
     const newEmployee = new Employee(employeeData);
     await newEmployee.save();
 
@@ -86,6 +98,7 @@ exports.create = async (req, reply) => {
         error: error.message,
       });
     }
+
     reply.code(500).send({ message: "Server error", error: error.message });
   }
 };

@@ -331,7 +331,7 @@ async function getPayrollByMonth(request, reply) {
         message: "Month and year are required",
       });
     }
-
+    console.log("month and year", month, year);
     const payrolls = await payrollService.getPayrollWithEmployeeDetailsByMonth(
       month,
       year

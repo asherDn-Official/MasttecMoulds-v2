@@ -83,7 +83,7 @@ const employeeSchema = new mongoose.Schema(
     salary: { type: Number, min: 0 },
     allowance: { type: Number, min: 0, default: 0 },
     hra: { type: Number, min: 0, default: 0 },
-    esic: { type: Number, min: 0, default: 0 },
+    esic: { type: String },
 
     password: { type: String, select: false },
 

@@ -62,24 +62,40 @@ exports.getEmployeeAttendance = async (request, reply) => {
   }
 };
 
-// Get all attendance records
-exports.getAllAttendance = async (request, reply) => {
+exports.getAllAttendance = async (req, reply) => {
   try {
-    const { periodFrom, periodTo } = request.query;
+    const { periodFrom, periodTo, date } = req.query;
 
-    const records = await attendanceService.getAllEmployeesAttendance(periodFrom, periodTo);
+    let records;
+    if (date) {
+      // <-- This is missing
+      records = await attendanceService.getAllEmployeeDateAttendance(date);
+    } else if (periodFrom && periodTo) {
+      records = await attendanceService.getAllEmployeesAttendance(
+        periodFrom,
+        periodTo
+      );
+    } else {
+      records = await attendanceService.getAllEmployeesAttendance();
+    }
 
-    reply.status(200).send({
+    if (!records) {
+      return reply.send({
+        success: true,
+        count: 0,
+        data: [],
+      });
+    }
+    reply.send({
       success: true,
       count: records.length,
-      data: records
+      data: records,
     });
   } catch (error) {
-    console.error("Error fetching all attendance:", error);
     reply.status(500).send({
       success: false,
-      message: "Error fetching all attendance",
-      error: error.message
+      message: "Error fetching attendance records",
+      error: error.message,
     });
   }
 };

@@ -118,10 +118,10 @@ const employeeRoutes = async (fastify, options) => {
             },
           },
           bankDetails: {
-            type: "object",
+            // type: "object",
             properties: {
               value: {
-                type: "object",
+                // type: "object",
                 properties: {
                   bankName: { type: "string", example: "SBI" },
                   bankBranch: { type: "string", example: "Bangalore Main" },

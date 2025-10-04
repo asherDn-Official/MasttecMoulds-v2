@@ -696,14 +696,14 @@ class PayrollService {
   async getPayrollWithEmployeeDetailsByMonth(month, year) {
     try {
       const payrolls = await Payroll.find({
-        'payrunHistory.salaryMonth': parseInt(month),
-        'payrunHistory.salaryYear': parseInt(year)
+        'payrunHistory.salaryMonth': month,
+        'payrunHistory.salaryYear': year
       }).populate('employeeId', 'employeeName employeeId department designation mailId');
 
       return payrolls.map(payroll => ({
         ...payroll.toObject(),
         currentPayrun: payroll.payrunHistory.find(
-          p => p.salaryMonth === parseInt(month) && p.salaryYear === parseInt(year)
+          p => p.salaryMonth === month && p.salaryYear === year
         )
       }));
     } catch (error) {

@@ -291,7 +291,63 @@ class AttendanceService {
       throw error;
     }
   }
+  async getAllEmployeeDateAttendance(date) {
+    try {
+      // Use an aggregation pipeline for a more robust and efficient query
+      const attendanceForDate = await AttendanceRecord.aggregate([
+        // Stage 1: Find documents where the date is within the report period
+        {
+          $match: {
+            reportPeriodFrom: { $lte: date },
+            reportPeriodTo: { $gte: date },
+          },
+        },
+        // Stage 2: Deconstruct the dailyAttendance array
+        { $unwind: "$dailyAttendance" },
+        // Stage 3: Filter for the specific date
+        { $match: { "dailyAttendance.date": date } },
+        // Stage 4: Project the desired output format
+        {
+          $project: {
+            _id: 1, // keep parent doc ID
+            employeeId: 1,
+            employeeName: 1,
+            department: 1,
+            designation: 1,
+            category: 1,
+            branch: 1,
+            reportOverallDate: 1,
+            reportPeriodFrom: 1,
+            reportPeriodTo: 1,
+            pdfFileName: 1,
+            extractedAt: 1,
 
+            // only keep the matched dailyAttendance subdoc
+            dailyAttendance: [
+              {
+                _id: "$dailyAttendance._id",
+                date: "$dailyAttendance.date",
+                status: "$dailyAttendance.status",
+                shift: "$dailyAttendance.shift",
+                timeIn: "$dailyAttendance.timeIn",
+                timeOut: "$dailyAttendance.timeOut",
+                workedHrs: "$dailyAttendance.workedHrs",
+                late: "$dailyAttendance.late",
+                earlyOut: "$dailyAttendance.earlyOut",
+                ot1: "$dailyAttendance.ot1",
+                ot2: "$dailyAttendance.ot2",
+              },
+            ],
+          },
+        },
+      ]);
+
+      return attendanceForDate;
+    } catch (error) {
+      console.error("Error fetching all employees daily attendance:", error);
+      throw error;
+    }
+  }
   async getEmployeeDailyAttendance(employeeId, date) {
     try {
       const records = await AttendanceRecord.find({
