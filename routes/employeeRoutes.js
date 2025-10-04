@@ -414,68 +414,240 @@ fastify.get("/", {
   }
 }, employeeController.getAll);
 
+// const getByIdOpts = {
+//     schema: {
+//       tags: ["Employee"],
+//       summary: "Get a single employee by ID",
+//       description: "Fetches the details of a specific employee using their unique MongoDB ID.",
+//       params: {
+//         type: "object",
+//         required: ["id"],
+//         properties: {
+//           id: {
+//             type: "string",
+//             description: "Employee's unique MongoDB ID",
+//             example: "60c72b2f9b1d8c001f8e4d1c",
+//           },
+//         },
+//       },
+//       response: {
+//         200: {
+//           description: "Successful response",
+//           type: "object",
+//           properties: {
+//             _id: { type: "string" },
+//             employeeName: { type: "string" },
+//             employeePicture: { type: "string" },
+//             employeeId: { type: "string" },
+//             department: { type: "string" },
+//             designation: { type: "string" },
+//             mobileNumber: { type: "string" },
+//             mailId: { type: "string" },
+//             status: { type: "boolean" },
+//             // Add all other employee fields you want to return
+//             createdAt: { type: "string", format: "date-time" },
+//             updatedAt: { type: "string", format: "date-time" },
+//           },
+//         },
+//         404: {
+//           description: "Employee not found",
+//           type: "object",
+//           properties: {
+//             message: { type: "string", example: "Employee not found" },
+//           },
+//         },
+//         400: {
+//           description: "Invalid ID format",
+//           type: "object",
+//           properties: {
+//             message: { type: "string", example: "Invalid employee ID format" },
+//           },
+//         },
+//         500: {
+//           description: "Server error",
+//           type: "object",
+//           properties: {
+//             message: { type: "string" },
+//             error: { type: "string" },
+//           },
+//         },
+//       },
+//     },
+//   };
 const getByIdOpts = {
-    schema: {
-      tags: ["Employee"],
-      summary: "Get a single employee by ID",
-      description: "Fetches the details of a specific employee using their unique MongoDB ID.",
-      params: {
-        type: "object",
-        required: ["id"],
-        properties: {
-          id: {
-            type: "string",
-            description: "Employee's unique MongoDB ID",
-            example: "60c72b2f9b1d8c001f8e4d1c",
-          },
-        },
-      },
-      response: {
-        200: {
-          description: "Successful response",
-          type: "object",
-          properties: {
-            _id: { type: "string" },
-            employeeName: { type: "string" },
-            employeePicture: { type: "string" },
-            employeeId: { type: "string" },
-            department: { type: "string" },
-            designation: { type: "string" },
-            mobileNumber: { type: "string" },
-            mailId: { type: "string" },
-            status: { type: "boolean" },
-            // Add all other employee fields you want to return
-            createdAt: { type: "string", format: "date-time" },
-            updatedAt: { type: "string", format: "date-time" },
-          },
-        },
-        404: {
-          description: "Employee not found",
-          type: "object",
-          properties: {
-            message: { type: "string", example: "Employee not found" },
-          },
-        },
-        400: {
-          description: "Invalid ID format",
-          type: "object",
-          properties: {
-            message: { type: "string", example: "Invalid employee ID format" },
-          },
-        },
-        500: {
-          description: "Server error",
-          type: "object",
-          properties: {
-            message: { type: "string" },
-            error: { type: "string" },
-          },
+  schema: {
+    tags: ["Employee"],
+    summary: "Get a single employee by ID",
+    description: "Fetches the details of a specific employee using their unique MongoDB ID.",
+    params: {
+      type: "object",
+      required: ["id"],
+      properties: {
+        id: {
+          type: "string",
+          description: "Employee's unique MongoDB ID",
+          example: "68e0e27065e183a5bf1371de",
         },
       },
     },
-  };
+    response: {
+      200: {
+        description: "Successful response",
+        type: "object",
+        properties: {
+          _id: { type: "string" },
+          employeeName: { type: "string" },
+          employeePicture: { type: "string" },
+          employeeId: { type: "string" },
+          department: { type: "string" },
+          departmentCode: { type: "string" },
+          designation: { type: "string" },
+          qualification: { type: "string" },
+          dateOfBirth: { type: "string", format: "date" },
+          dateOfJoining: { type: "string", format: "date" },
+          bloodGroup: { type: "string" },
+          mobileNumber: { type: "string" },
+          mailId: { type: "string" },
+          address: { type: "string" },
+          bankDetails: {
+            type: "object",
+            properties: {
+              bankName: { type: "string" },
+              bankBranch: { type: "string" },
+              bankAccountNumber: { type: "string" },
+              bankIFSCCode: { type: "string" },
+            },
+          },
+          PANNumber: { type: "string" },
+          aadhaarNo: { type: "string" },
+          UANNo: { type: "string" },
+          esicId: { type: "string" },
+          epfId: { type: "string" },
+          documents: {
+            type: "object",
+            properties: {
+              addressProof: { type: "string" },
+              educationCertificate: { type: "string" },
+              passbookProof: { type: "string" },
+              PANCardProof: { type: "string" },
+            },
+          },
+          salary: { type: "number" },
+          allowance: { type: "number" },
+          hra: { type: "number" },
+          esic: { type: "number" },
+          status: { type: "boolean" },
+          createdAt: { type: "string", format: "date-time" },
+          updatedAt: { type: "string", format: "date-time" },
+        },
+      },
+      404: {
+        description: "Employee not found",
+        type: "object",
+        properties: {
+          message: { type: "string", example: "Employee not found" },
+        },
+      },
+      400: {
+        description: "Invalid ID format",
+        type: "object",
+        properties: {
+          message: { type: "string", example: "Invalid employee ID format" },
+        },
+      },
+      500: {
+        description: "Server error",
+        type: "object",
+        properties: {
+          message: { type: "string" },
+          error: { type: "string" },
+        },
+      },
+    },
+  },
+};
 
 fastify.get("/:id", getByIdOpts, employeeController.getById);
+const getByEmployeeIdOpts = {
+  schema: {
+    tags: ["Employee"],
+    summary: "Get a single employee by employee ID",
+    description: "Fetches the details of a specific employee using their employeeId field.",
+    params: {
+      type: "object",
+      required: ["employeeId"],
+      properties: {
+        employeeId: {
+          type: "string",
+          description: "Unique Employee ID",
+          example: "EMP1001",
+        },
+      },
+    },
+    response: {
+      200: {
+        description: "Successful response",
+        type: "object",
+        properties: {
+          _id: { type: "string", example: "68e0ce0649e70e64b37ceea2" },
+          employeeName: { type: "string", example: "John Doe" },
+          employeePicture: { type: ["string", "null"], example: null },
+          employeeId: { type: "string", example: "EMP1001" },
+          department: { type: "string", example: "HR" },
+          departmentCode: { type: "string", example: "HR01" },
+          designation: { type: "string", example: "HR Manager" },
+          qualification: { type: "string", example: "MBA" },
+          dateOfBirth: { type: "string", format: "date", example: "1990-05-12" },
+          dateOfJoining: { type: "string", format: "date", example: "2020-08-01" },
+          bloodGroup: { type: "string", example: "O+" },
+          mobileNumber: { type: "string", example: "9876543210" },
+          mailId: { type: "string", example: "johndoe@example.com" },
+          address: { type: "string", example: "221B Baker Street, London" },
+          bankDetails: {
+            type: "object",
+            properties: {
+              bankName: { type: "string", example: "State Bank of India" },
+              bankBranch: { type: "string", example: "Chennai Main" },
+              bankAccountNumber: { type: "string", example: "123456789012" },
+              bankIFSCCode: { type: "string", example: "SBIN0001234" },
+            },
+          },
+          PANNumber: { type: "string", example: "ABCDE1234F" },
+          aadhaarNo: { type: "string", example: "123412341234" },
+          UANNo: { type: "string", example: "100200300400" },
+          esicId: { type: "string", example: "ESIC001122" },
+          epfId: { type: "string", example: "EPF556677" },
+          documents: { type: "object" },
+          salary: { type: "number", example: 60000 },
+          allowance: { type: "number", example: 5000 },
+          hra: { type: "number", example: 8000 },
+          esic: { type: "number", example: 1000 },
+          password: {
+            type: "string",
+            description: "Hashed password",
+            example: "$2a$10$Ws0J/KfYzn9.kDZxOMkHTOLF9DpVu4um0qh9TnIqD.m6kO0gFwn9i",
+          },
+          status: { type: "boolean", example: true },
+          createdAt: { type: "string", format: "date-time", example: "2025-10-04T07:34:30.890Z" },
+          updatedAt: { type: "string", format: "date-time", example: "2025-10-04T07:34:30.890Z" },
+          __v: { type: "number", example: 0 },
+        },
+      },
+      404: {
+        description: "Employee not found",
+        type: "object",
+        properties: { message: { type: "string", example: "Employee not found" } },
+      },
+      500: {
+        description: "Server error",
+        type: "object",
+        properties: { message: { type: "string" }, error: { type: "string" } },
+      },
+    },
+  },
+};
+
+fastify.get("/by-employee-id/:employeeId", getByEmployeeIdOpts, employeeController.getByEmployeeId);
 
 const updateOpts = {
     schema: {

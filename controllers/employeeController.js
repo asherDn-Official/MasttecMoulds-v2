@@ -156,6 +156,21 @@ exports.getAll = async (req, reply) => {
     reply.code(500).send({ message: "Server error", error: error.message });
   }
 };
+exports.getByEmployeeId = async (req, reply) => {
+  try {
+    const { employeeId } = req.params;
+    const employee = await Employee.findOne({ employeeId });
+
+    if (!employee) {
+      return reply.code(404).send({ message: "Employee not found" });
+    }
+
+    reply.code(200).send(employee);
+  } catch (error) {
+    req.log.error(error);
+    reply.code(500).send({ message: "Server error", error: error.message });
+  }
+};
 
 exports.getById = async (req, reply) => {
   try {
