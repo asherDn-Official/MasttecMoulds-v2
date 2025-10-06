@@ -32,7 +32,6 @@ credentials: true,
         schemas: {},
       },
     },
-    exposeRoute: true,
   });
   fastify.register(require("@fastify/swagger-ui"), {
     routePrefix: "/docs",

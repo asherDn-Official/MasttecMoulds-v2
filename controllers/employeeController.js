@@ -1,16 +1,25 @@
 const Employee = require("../models/Employee");
 const fs = require("node:fs");
-const util = require("node:util");
-const { pipeline } = require("node:stream");
 const path = require("node:path");
-
-const pump = util.promisify(pipeline);
 
 const saveFile = async (file) => {
   if (!file) return null;
-  const uniqueFilename = `${Date.now()}-${file.filename.replace(/\s/g, "_")}`;
-  const uploadPath = path.join(__dirname, "..", "uploads", uniqueFilename);
-  await pump(file.file, fs.createWriteStream(uploadPath));
+
+  // Sanitize filename and ensure it has an extension
+  const originalName = file.filename.replace(/\s/g, "_");
+  const fileExtension = path.extname(originalName);
+  const baseName = path.basename(originalName, fileExtension);
+
+  // If there's no extension, something is wrong, but we can try to use mimetype
+  // This is a fallback and might not always be perfect.
+  const finalExtension = fileExtension || (file.mimetype ? `.${file.mimetype.split('/')[1]}` : '');
+
+  const uniqueFilename = `${Date.now()}-${baseName}${finalExtension}`;
+  const uploadPath = path.join(__dirname, '..', 'uploads', uniqueFilename);
+
+  // Use toBuffer() to get the file content and then write it to disk.
+  const buffer = await file.toBuffer();
+  fs.writeFileSync(uploadPath, buffer);
   return `/uploads/${uniqueFilename}`;
 };
 
