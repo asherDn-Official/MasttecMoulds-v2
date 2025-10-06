@@ -435,7 +435,8 @@ async function createMissingEmployeeRecords(request, reply) {
 // Create or update payroll for employee
 async function createOrUpdatePayrollForEmployee(request, reply) {
   try {
-    const { employeeId, salaryMonth, salaryYear, payrunData } = request.body;
+    const { employeeId } = request.params;
+    const { salaryMonth, salaryYear, payrunData } = request.body;
 
     if (!employeeId || !salaryMonth || !salaryYear) {
       return reply.status(400).send({
@@ -456,19 +457,16 @@ async function createOrUpdatePayrollForEmployee(request, reply) {
 
       if (existingPayrunIndex !== -1) {
         // Update existing payrun
-        const updateData = {
-          payrunIndex: existingPayrunIndex,
-          payrunData: {
-            ...payrunData,
-            salaryMonth,
-            salaryYear,
-          },
-        };
+        // Merge new data into the existing payrun
+        Object.assign(payrollRecord.payrunHistory[existingPayrunIndex], {
+          ...payrunData,
+          salaryMonth,
+          salaryYear,
+        });
 
-        const updatedPayroll = await payrollService.updatePayrollByEmployeeId(
-          employeeId,
-          updateData
-        );
+        // Mark the array as modified for Mongoose to detect the change
+        payrollRecord.markModified('payrunHistory');
+        const updatedPayroll = await payrollRecord.save();
 
         return reply.status(200).send({
           success: true,
@@ -477,37 +475,12 @@ async function createOrUpdatePayrollForEmployee(request, reply) {
         });
       } else {
         // Add new payrun to existing record
-        const updateData = {
-          payrunData: {
-            salaryMonth,
-            salaryYear,
-            present: payrunData.present || "0",
-            absent: payrunData.absent || "0",
-            basic: payrunData.basic || "0",
-            houseRent: payrunData.houseRent || "0",
-            EPF: payrunData.EPF || "0",
-            ESIC: payrunData.ESIC || "0",
-            incentives: payrunData.incentives || "0",
-            allowances: payrunData.allowances || "0",
-            advance: payrunData.advance || "0",
-            paymentLossDays: payrunData.paymentLossDays || "0",
-            paymentLossAmount: payrunData.paymentLossAmount || "0",
-            OT1Hours: payrunData.OT1Hours || "0",
-            OT1Amount: payrunData.OT1Amount || "0",
-            OT2Hours: payrunData.OT2Hours || "0",
-            OT2Amount: payrunData.OT2Amount || "0",
-            holdOT: payrunData.holdOT || "0",
-            totalBasicPayment: payrunData.totalBasicPayment || "0",
-            totalOTPayment: payrunData.totalOTPayment || "0",
-            salary: payrunData.salary || "0",
-            balance: payrunData.balance || "0",
-          },
-        };
-
-        const updatedPayroll = await payrollService.updatePayrollByEmployeeId(
-          employeeId,
-          updateData
-        );
+        payrollRecord.payrunHistory.push({
+          ...payrunData,
+          salaryMonth,
+          salaryYear,
+        });
+        const updatedPayroll = await payrollRecord.save();
 
         return reply.status(201).send({
           success: true,

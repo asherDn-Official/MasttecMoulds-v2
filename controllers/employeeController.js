@@ -18,7 +18,7 @@ exports.create = async (req, reply) => {
   try {
     const { body } = req;
 
-    // ✅ FIX: parse nested JSON strings safely
+    // ✅ Safely parse JSON fields
     if (body.bankDetails && typeof body.bankDetails.value === "string") {
       try {
         body.bankDetails.value = JSON.parse(body.bankDetails.value);
@@ -27,13 +27,10 @@ exports.create = async (req, reply) => {
       }
     }
 
-    // ✅ (Optional) — if you have other JSON-like nested fields later, do the same parsing for them here
-    // Example: if you add `body.documents.value` as a JSON string later, parse similarly
-
     const employeeData = {
-      employeeName: body.employeeName.value,
-      employeeId: body.employeeId.value,
-      password: body.password.value,
+      employeeName: body.employeeName?.value,
+      employeeId: body.employeeId?.value,
+      password: body.password?.value,
       department: body.department?.value,
       departmentCode: body.departmentCode?.value,
       designation: body.designation?.value,
@@ -44,7 +41,6 @@ exports.create = async (req, reply) => {
       mobileNumber: body.mobileNumber?.value,
       mailId: body.mailId?.value,
       address: body.address?.value,
-      // ✅ Now this will work — it's properly parsed as object
       bankDetails: body.bankDetails?.value,
       PANNumber: body.PANNumber?.value,
       aadhaarNo: body.aadhaarNo?.value,
@@ -65,20 +61,36 @@ exports.create = async (req, reply) => {
       },
     };
 
-    const existing = await Employee.findOne({
-      $or: [
-        { employeeId: employeeData.employeeId },
-        { mobileNumber: employeeData.mobileNumber },
-        { mailId: employeeData.mailId },
-        { PANNumber: employeeData.PANNumber },
-        { aadhaarNo: employeeData.aadhaarNo },
-      ],
-    });
+    // ✅ Build dynamic duplicate-check query — only include fields that are truthy
+    const queryConditions = [];
+
+    if (employeeData.employeeId) queryConditions.push({ employeeId: employeeData.employeeId });
+    if (employeeData.mobileNumber) queryConditions.push({ mobileNumber: employeeData.mobileNumber });
+    if (employeeData.mailId) queryConditions.push({ mailId: employeeData.mailId });
+    if (employeeData.PANNumber) queryConditions.push({ PANNumber: employeeData.PANNumber });
+    if (employeeData.aadhaarNo) queryConditions.push({ aadhaarNo: employeeData.aadhaarNo });
+
+    // Only check if there are any valid fields to match
+    const existing = queryConditions.length
+      ? await Employee.findOne({ $or: queryConditions })
+      : null;
 
     if (existing) {
+      const duplicateFields = [];
+      if (employeeData.employeeId && existing.employeeId === employeeData.employeeId)
+        duplicateFields.push("employeeId");
+      if (employeeData.mobileNumber && existing.mobileNumber === employeeData.mobileNumber)
+        duplicateFields.push("mobileNumber");
+      if (employeeData.mailId && existing.mailId === employeeData.mailId)
+        duplicateFields.push("mailId");
+      if (employeeData.PANNumber && existing.PANNumber === employeeData.PANNumber)
+        duplicateFields.push("PANNumber");
+      if (employeeData.aadhaarNo && existing.aadhaarNo === employeeData.aadhaarNo)
+        duplicateFields.push("aadhaarNo");
+
       return reply.code(409).send({
-        message:
-          "Employee with this ID, mobile, email, PAN, or Aadhaar already exists",
+        message: `Duplicate value(s) found for: ${duplicateFields.join(", ")}`,
+        duplicateFields,
       });
     }
 
@@ -93,8 +105,10 @@ exports.create = async (req, reply) => {
     req.log.error(error);
 
     if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0];
       return reply.code(409).send({
-        message: "Employee with this ID or unique field already exists.",
+        message: `Duplicate value found for field: ${field}`,
+        field,
         error: error.message,
       });
     }
@@ -102,6 +116,7 @@ exports.create = async (req, reply) => {
     reply.code(500).send({ message: "Server error", error: error.message });
   }
 };
+
 
 exports.getAll = async (req, reply) => {
   try {

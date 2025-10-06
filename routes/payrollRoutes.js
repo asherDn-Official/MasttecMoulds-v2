@@ -100,33 +100,6 @@ async function payrollRoutes(fastify, options) {
     handler: payrollController.getPayrollByEmployeeId
   });
 
-  // Update payroll by employee ID
-  fastify.put('/payrolls/employee/:employeeId', {
-    schema: {
-      description: 'Update payroll record by employee ID',
-      tags: ['Payroll'],
-      params: {
-        type: 'object',
-        properties: {
-          employeeId: { type: 'string' }
-        },
-        required: ['employeeId']
-      },
-      body: { type: 'object' },
-      response: {
-        200: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean' },
-            message: { type: 'string' },
-            data: { type: 'object' }
-          }
-        }
-      }
-    },
-    handler: payrollController.updatePayrollByEmployeeId
-  });
-
   // Update multiple payrolls
   fastify.put('/payrolls/batch', {
     schema: {
@@ -241,9 +214,9 @@ async function payrollRoutes(fastify, options) {
   });
 
   // Create or update payroll for employee
-  fastify.post('/payrolls/employee/:employeeId', {
+  fastify.put('/payrolls/employee/:employeeId', {
     schema: {
-      description: 'Create or update payroll for a specific employee',
+      description: 'Create or update a specific payrun for an employee. If the payrun for the month/year exists, it is updated. Otherwise, it is created.',
       tags: ['Payroll'],
       params: {
         type: 'object',
@@ -259,7 +232,7 @@ async function payrollRoutes(fastify, options) {
           salaryYear: { type: 'string' },
           payrunData: { type: 'object' }
         },
-        required: ['salaryMonth', 'salaryYear']
+        required: ['salaryMonth', 'salaryYear', 'payrunData']
       },
       response: {
         200: {
