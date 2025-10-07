@@ -234,6 +234,52 @@ exports.getById = async (req, reply) => {
   }
 };
 
+// exports.update = async (req, reply) => {
+//   try {
+//     const { id } = req.params;
+//     const { body } = req;
+
+//     const employee = await Employee.findById(id);
+//     if (!employee) {
+//       return reply.code(404).send({ message: "Employee not found" });
+//     }
+
+//     for (const key in body) {
+//       if (Object.prototype.hasOwnProperty.call(body, key)) {
+//         const part = body[key];
+//         if (part.file) {
+//           const filePath = await saveFile(part);
+//           if (key.startsWith("documents.")) {
+//             const docKey = key.split(".")[1];
+//             employee.documents[docKey] = filePath;
+//           } else {
+//             employee[key] = filePath;
+//           }
+//         } else if (part.value !== undefined) {
+//           if (key.includes(".")) {
+//             const [parent, child] = key.split(".");
+//             if (!employee[parent]) employee[parent] = {};
+//             employee[parent][child] = part.value;
+//           } else {
+//             employee[key] = part.value;
+//           }
+//         }
+//       }
+//     }
+
+//     const updatedEmployee = await employee.save();
+
+//     reply
+//       .code(200)
+//       .send({
+//         message: "Employee updated successfully",
+//         employee: updatedEmployee,
+//       });
+//   } catch (error) {
+//     req.log.error(error);
+//     reply.code(500).send({ message: "Server error", error: error.message });
+//   }
+// };
 exports.update = async (req, reply) => {
   try {
     const { id } = req.params;
@@ -244,37 +290,64 @@ exports.update = async (req, reply) => {
       return reply.code(404).send({ message: "Employee not found" });
     }
 
+    // Helper to safely delete old files
+    const deleteOldFile = (filePath) => {
+      if (!filePath) return;
+      try {
+        const absolutePath = path.join(__dirname, "..", filePath);
+        if (fs.existsSync(absolutePath)) {
+          fs.unlinkSync(absolutePath);
+        }
+      } catch (err) {
+        console.warn(`⚠️ Failed to delete old file: ${filePath}`, err.message);
+      }
+    };
+
+    // Loop through each field in request body
     for (const key in body) {
-      if (Object.prototype.hasOwnProperty.call(body, key)) {
-        const part = body[key];
-        if (part.file) {
-          const filePath = await saveFile(part);
-          if (key.startsWith("documents.")) {
-            const docKey = key.split(".")[1];
-            employee.documents[docKey] = filePath;
-          } else {
-            employee[key] = filePath;
+      if (!Object.prototype.hasOwnProperty.call(body, key)) continue;
+      const part = body[key];
+
+      // Handle uploaded files
+      if (part && typeof part.toBuffer === "function") {
+        const newFilePath = await saveFile(part);
+
+        if (key.startsWith("documents.")) {
+          const docKey = key.split(".")[1];
+          // Delete old document file if it exists
+          if (employee.documents?.[docKey]) {
+            deleteOldFile(employee.documents[docKey]);
           }
-        } else if (part.value !== undefined) {
-          if (key.includes(".")) {
-            const [parent, child] = key.split(".");
-            if (!employee[parent]) employee[parent] = {};
-            employee[parent][child] = part.value;
-          } else {
-            employee[key] = part.value;
+          // Save new file path
+          if (!employee.documents) employee.documents = {};
+          employee.documents[docKey] = newFilePath;
+        } else if (key === "employeePicture") {
+          // Delete old profile image if exists
+          if (employee.employeePicture) {
+            deleteOldFile(employee.employeePicture);
           }
+          employee.employeePicture = newFilePath;
+        }
+      }
+
+      // Handle normal fields
+      else if (part && part.value !== undefined) {
+        if (key.includes(".")) {
+          const [parent, child] = key.split(".");
+          if (!employee[parent]) employee[parent] = {};
+          employee[parent][child] = part.value;
+        } else {
+          employee[key] = part.value;
         }
       }
     }
 
     const updatedEmployee = await employee.save();
 
-    reply
-      .code(200)
-      .send({
-        message: "Employee updated successfully",
-        employee: updatedEmployee,
-      });
+    reply.code(200).send({
+      message: "Employee updated successfully",
+      employee: updatedEmployee,
+    });
   } catch (error) {
     req.log.error(error);
     reply.code(500).send({ message: "Server error", error: error.message });
