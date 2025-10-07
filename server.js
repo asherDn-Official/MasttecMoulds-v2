@@ -18,7 +18,7 @@ const build = async (opts = {}) => {
   await fastify.register(require("@fastify/cors"), {
  origin: ["http://localhost:5173", "http://localhost:3001"],
 credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS","PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"],
 });
   await fastify.register(require("@fastify/swagger"), {
