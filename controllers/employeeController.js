@@ -23,6 +23,24 @@ const saveFile = async (file) => {
   return `/uploads/${uniqueFilename}`;
 };
 
+const resolveDocumentPart = (body, field) => {
+  if (!body) return null;
+
+  const candidates = [
+    body.documents?.[field],
+    body[`documents.${field}`],
+    body[`documents[${field}]`],
+  ];
+
+  for (const candidate of candidates) {
+    if (candidate && (typeof candidate.toBuffer === "function" || candidate.file)) {
+      return candidate;
+    }
+  }
+
+  return null;
+};
+
 exports.create = async (req, reply) => {
   try {
     const { body } = req;
@@ -63,10 +81,10 @@ exports.create = async (req, reply) => {
       status: body.status?.value,
       employeePicture: await saveFile(body.employeePicture),
       documents: {
-        addressProof: await saveFile(body.documents?.addressProof),
-        educationCertificate: await saveFile(body.documents?.educationCertificate),
-        passbookProof: await saveFile(body.documents?.passbookProof),
-        PANCardProof: await saveFile(body.documents?.PANCardProof),
+        addressProof: await saveFile(resolveDocumentPart(body, "addressProof")),
+        educationCertificate: await saveFile(resolveDocumentPart(body, "educationCertificate")),
+        passbookProof: await saveFile(resolveDocumentPart(body, "passbookProof")),
+        PANCardProof: await saveFile(resolveDocumentPart(body, "PANCardProof")),
       },
     };
 

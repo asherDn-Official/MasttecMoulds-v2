@@ -26,7 +26,7 @@ credentials: true,
       info: {
         title: "Masttec Moulds v2 API",
         description: "API Documentation of Masttec Moulds v2",
-        version: "1.0.0",
+        version: "1.0.0", 
       },
       components: {
         schemas: {},
