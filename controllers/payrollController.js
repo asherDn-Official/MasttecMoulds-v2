@@ -5,17 +5,17 @@ const puppeteer = require("puppeteer");
 const path = require("path");
 const fs = require("fs-extra");
 const nodemailer = require("nodemailer");
-const htmlToPdf = require("html-pdf"); 
+const htmlToPdf = require("html-pdf");
 const payrollService = require("../services/payrollService");
 
 // Load logo as a Base64 data URI to embed in the PDF
-const logoPath = path.join(__dirname, '../utils/logo/logo.png');
-const logoBase64 = fs.readFileSync(logoPath, 'base64');
-const logo = `data:image/png;base64,${logoBase64}`; 
+const logoPath = path.join(__dirname, "../utils/logo/logo.png");
+const logoBase64 = fs.readFileSync(logoPath, "base64");
+const logo = `data:image/png;base64,${logoBase64}`;
 
 // Helper function to format date
 const formatDate = (dateString) => {
-  const date = new Date(dateString); 
+  const date = new Date(dateString);
   const day = date.getDate();
   const month = date.toLocaleString("default", { month: "long" });
   const year = date.getFullYear();
@@ -44,8 +44,18 @@ const getValueOrDash = (value) =>
 // Helper function to get month name
 function getMonthName(monthNumber) {
   const months = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
   ];
   return months[parseInt(monthNumber) - 1] || "Unknown";
 }
@@ -465,7 +475,7 @@ async function createOrUpdatePayrollForEmployee(request, reply) {
         });
 
         // Mark the array as modified for Mongoose to detect the change
-        payrollRecord.markModified('payrunHistory');
+        payrollRecord.markModified("payrunHistory");
         const updatedPayroll = await payrollRecord.save();
 
         return reply.status(200).send({
@@ -631,8 +641,12 @@ async function sendPayslipEmail(request, reply) {
     const mailOptions = {
       from: process.env.EMAIL_USER || "your-email@gmail.com",
       to: employee.mailId,
-      subject: `Payslip for ${getMonthName(salaryMonth)} ${salaryYear} - ${employee.employeeName}`,
-      text: `Dear ${employee.employeeName},\n\nPlease find attached your payslip for ${getMonthName(
+      subject: `Payslip for ${getMonthName(salaryMonth)} ${salaryYear} - ${
+        employee.employeeName
+      }`,
+      text: `Dear ${
+        employee.employeeName
+      },\n\nPlease find attached your payslip for ${getMonthName(
         salaryMonth
       )} ${salaryYear}.\n\nRegards,\nMasttec HR`,
       attachments: [
@@ -652,6 +666,21 @@ async function sendPayslipEmail(request, reply) {
     emailRecord.responseMessage = `Payslip sent successfully to ${employee.mailId}`;
     emailRecord.sentAt = new Date();
     await emailRecord.save();
+    // ✅ After successful email sending
+    await Payroll.updateOne(
+      {
+        employeeId,
+        "payrunHistory.salaryMonth": salaryMonth,
+        "payrunHistory.salaryYear": salaryYear,
+      },
+      {
+        $set: {
+          "payrunHistory.$.payslipSent": true,
+          "payrunHistory.$.payslipSentAt": new Date(),
+          "payrunHistory.$.emailResponse": `Payslip sent successfully to ${employee.mailId}`,
+        },
+      }
+    );
 
     reply.status(200).send({
       success: true,
@@ -690,7 +719,6 @@ async function sendPayslipEmail(request, reply) {
     });
   }
 }
-
 
 // Send bulk payslip emails
 async function sendBulkPayslipEmails(request, reply) {
@@ -793,6 +821,21 @@ async function sendBulkPayslipEmails(request, reply) {
 
         // Send email
         await transporter.sendMail(mailOptions);
+// ✅ Update payroll record to mark payslip as sent
+await Payroll.updateOne(
+  {
+    employeeId,
+    "payrunHistory.salaryMonth": salaryMonth,
+    "payrunHistory.salaryYear": salaryYear,
+  },
+  {
+    $set: {
+      "payrunHistory.$.payslipSent": true,
+      "payrunHistory.$.payslipSentAt": new Date(),
+      "payrunHistory.$.emailResponse": `Payslip sent successfully to ${employee.mailId}`,
+    },
+  }
+);
 
         results.successful.push({
           employeeId,
@@ -817,14 +860,14 @@ async function sendBulkPayslipEmails(request, reply) {
 
     // Save results to the database
     const emailResult = new PayrollEmailResponse({
-      employeeId: 'bulk',
-      employeeName: 'Bulk Email',
-      emailId: 'bulk@masttec.com',
+      employeeId: "bulk",
+      employeeName: "Bulk Email",
+      emailId: "bulk@masttec.com",
       salaryMonth,
       salaryYear,
-      status: results.failed.length > 0 ? 'FAILED' : 'SUCCESS',
+      status: results.failed.length > 0 ? "FAILED" : "SUCCESS",
       responseMessage: `Sent: ${results.successful.length}, Failed: ${results.failed.length}`,
-      errorDetails: JSON.stringify(results.failed)
+      errorDetails: JSON.stringify(results.failed),
     });
     await emailResult.save();
 
@@ -965,7 +1008,9 @@ function createPayslipHTML(employee, payrun) {
               KATTUPAKKAM,CHENNAI-56
             </p>
           </div>
-          <h2 style="float: right;">Pay Slip - ${monthName} ${payrun.salaryYear}</h2>
+          <h2 style="float: right;">Pay Slip - ${monthName} ${
+    payrun.salaryYear
+  }</h2>
         </div>
         <div style="clear: both;"></div>
 
@@ -988,7 +1033,9 @@ function createPayslipHTML(employee, payrun) {
               <th>Department</th>
               <td>${employee?.department}</td>
               <th>Bank & Branch</th>
-              <td>${employee?.bankName || "N/A"}/${employee?.bankBranch || "N/A"}</td>
+              <td>${employee?.bankName || "N/A"}/${
+    employee?.bankBranch || "N/A"
+  }</td>
             </tr>
             <tr>
               <th>Date of Joining</th>
@@ -1085,13 +1132,17 @@ function createPayslipHTML(employee, payrun) {
               </tr>
               <tr>
                 <td class="bg-light">O.T @ 1.25</td>
-                <td>${getValueOrDash(payrun.OT1Amount)} (${getValueOrDash(payrun.OT1Hours)})</td>
+                <td>${getValueOrDash(payrun.OT1Amount)} (${getValueOrDash(
+    payrun.OT1Hours
+  )})</td>
                 <td class="bg-light">Production Loss</td>
                 <td>-</td>
               </tr>
               <tr>
                 <td class="bg-light">O.T @ 1.75</td>
-                <td>${getValueOrDash(payrun.OT2Amount)} (${getValueOrDash(payrun.OT2Hours)})</td>
+                <td>${getValueOrDash(payrun.OT2Amount)} (${getValueOrDash(
+    payrun.OT2Hours
+  )})</td>
                 <td class="bg-light">-</td>
                 <td>-</td>
               </tr>
