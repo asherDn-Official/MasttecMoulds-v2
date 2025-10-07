@@ -278,3 +278,25 @@ exports.deleteById = async (req, reply) => {
     reply.code(500).send({ message: "Server error", error: error.message });
   }
 };
+
+
+exports.checkEmployeeId = async (req, reply) => {
+  try {
+    const { employeeId } = req.params;
+
+    if (!employeeId) {
+      return reply.code(400).send({ message: "Employee ID is required" });
+    }
+
+    const existingEmployee = await Employee.findOne({ employeeId: employeeId.toUpperCase() });
+
+    if (existingEmployee) {
+      return reply.code(200).send({ exists: true, message: "Employee ID already exists" });
+    }
+
+    reply.code(200).send({ exists: false, message: "Employee ID is available" });
+  } catch (error) {
+    req.log.error(error);
+    reply.code(500).send({ message: "Server error", error: error.message });
+  }
+};

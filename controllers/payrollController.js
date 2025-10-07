@@ -555,6 +555,7 @@ async function generatePDFBufferFromHTML(htmlContent) {
 }
 
 // Send payslip email
+// Send payslip email (with DB record)
 async function sendPayslipEmail(request, reply) {
   try {
     const { salaryMonth, salaryYear } = request.body;
@@ -601,11 +602,22 @@ async function sendPayslipEmail(request, reply) {
       });
     }
 
-    // Generate HTML payslip
+    // Generate HTML and PDF
     const payslipHTML = createPayslipHTML(employee, payrun);
-
-    // Generate PDF
     const pdfBuffer = await generatePDFBufferFromHTML(payslipHTML);
+
+    // Create a pending record first
+    const emailRecord = new PayrollEmailResponse({
+      employeeId: employee.employeeId,
+      employeeName: employee.employeeName,
+      emailId: employee.mailId,
+      salaryMonth,
+      salaryYear,
+      status: "PENDING",
+      responseMessage: "Attempting to send email...",
+    });
+
+    await emailRecord.save();
 
     // Email setup
     const transporter = nodemailer.createTransport({
@@ -620,7 +632,9 @@ async function sendPayslipEmail(request, reply) {
       from: process.env.EMAIL_USER || "your-email@gmail.com",
       to: employee.mailId,
       subject: `Payslip for ${getMonthName(salaryMonth)} ${salaryYear} - ${employee.employeeName}`,
-      text: `Dear ${employee.employeeName},\n\nPlease find attached your payslip for ${getMonthName(salaryMonth)} ${salaryYear}.\n\nRegards,\nMasttec HR`,
+      text: `Dear ${employee.employeeName},\n\nPlease find attached your payslip for ${getMonthName(
+        salaryMonth
+      )} ${salaryYear}.\n\nRegards,\nMasttec HR`,
       attachments: [
         {
           filename: `Payslip_${employee.employeeName}_${salaryMonth}_${salaryYear}.pdf`,
@@ -632,6 +646,12 @@ async function sendPayslipEmail(request, reply) {
 
     // Send email
     await transporter.sendMail(mailOptions);
+
+    // ✅ Update record to SUCCESS
+    emailRecord.status = "SUCCESS";
+    emailRecord.responseMessage = `Payslip sent successfully to ${employee.mailId}`;
+    emailRecord.sentAt = new Date();
+    await emailRecord.save();
 
     reply.status(200).send({
       success: true,
@@ -646,6 +666,23 @@ async function sendPayslipEmail(request, reply) {
     });
   } catch (error) {
     console.error("Error sending payslip email:", error);
+
+    // ❌ Log the failure in the same collection
+    try {
+      await PayrollEmailResponse.create({
+        employeeId: request.params.employeeId || "unknown",
+        employeeName: "Unknown",
+        emailId: "N/A",
+        salaryMonth: request.body.salaryMonth,
+        salaryYear: request.body.salaryYear,
+        status: "FAILED",
+        responseMessage: "Error sending payslip email",
+        errorDetails: error.message,
+      });
+    } catch (logErr) {
+      console.error("Error logging email failure:", logErr);
+    }
+
     reply.status(500).send({
       success: false,
       message: "Error sending payslip email",
@@ -653,6 +690,7 @@ async function sendPayslipEmail(request, reply) {
     });
   }
 }
+
 
 // Send bulk payslip emails
 async function sendBulkPayslipEmails(request, reply) {

@@ -820,6 +820,48 @@ const updateOpts = {
   };
 
   fastify.delete("/:id", deleteOpts, employeeController.deleteById);
+  fastify.get(
+  "/check-id/:employeeId",
+  {
+    schema: {
+      tags: ["Employee"],
+      summary: "Check if Employee ID exists",
+      description: "Checks if a given employee ID is already registered in the system.",
+      params: {
+        type: "object",
+        required: ["employeeId"],
+        properties: {
+          employeeId: {
+            type: "string",
+            description: "Employee ID to check",
+            example: "EMP123",
+          },
+        },
+      },
+      response: {
+        200: {
+          description: "Check result",
+          type: "object",
+          properties: {
+            exists: { type: "boolean", example: true },
+            message: { type: "string", example: "Employee ID already exists" },
+          },
+        },
+        500: {
+          description: "Server error",
+          type: "object",
+          properties: {
+            message: { type: "string" },
+            error: { type: "string" },
+          },
+        },
+      },
+    },
+  },
+  employeeController.checkEmployeeId
+)
 };
+
+;
 
 module.exports = employeeRoutes;
