@@ -2,27 +2,31 @@ const Employee = require("../models/Employee");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const saveFile = async (file) => {
+// ✅ Updated saveFile: adds full URL support
+const saveFile = async (file, req = null) => {
   if (!file) return null;
 
-  // Sanitize filename and ensure it has an extension
   const originalName = file.filename.replace(/\s/g, "_");
   const fileExtension = path.extname(originalName);
   const baseName = path.basename(originalName, fileExtension);
-
-  // If there's no extension, something is wrong, but we can try to use mimetype
-  // This is a fallback and might not always be perfect.
-  const finalExtension = fileExtension || (file.mimetype ? `.${file.mimetype.split('/')[1]}` : '');
+  const finalExtension =
+    fileExtension || (file.mimetype ? `.${file.mimetype.split("/")[1]}` : "");
 
   const uniqueFilename = `${Date.now()}-${baseName}${finalExtension}`;
-  const uploadPath = path.join(__dirname, '..', 'uploads', uniqueFilename);
+  const uploadPath = path.join(__dirname, "..", "uploads", uniqueFilename);
 
-  // Use toBuffer() to get the file content and then write it to disk.
+  // Save file to disk
   const buffer = await file.toBuffer();
   fs.writeFileSync(uploadPath, buffer);
-  return `/uploads/${uniqueFilename}`;
+
+  // ✅ Construct full URL dynamically using request info
+  const baseUrl = req
+    ? `${req.protocol}://${req.headers.host}`
+    : "";
+  return `${baseUrl}/uploads/${uniqueFilename}`;
 };
 
+// Helper to resolve nested document fields
 const resolveDocumentPart = (body, field) => {
   if (!body) return null;
 
@@ -39,6 +43,20 @@ const resolveDocumentPart = (body, field) => {
   }
 
   return null;
+};
+
+
+const getFilePart = (part) => {
+  if (!part) return null;
+  if (typeof part.toBuffer === "function") return part;
+  if (part.file && typeof part.file.toBuffer === "function") return part.file;
+  return null;
+};
+
+const extractDocumentField = (key = "") => {
+  if (!key.startsWith("documents")) return null;
+  const match = key.match(/^documents(?:\.|\[)([^.\]]+)(?:\])?$/);
+  return match ? match[1] : null;
 };
 
 exports.create = async (req, reply) => {
@@ -79,12 +97,12 @@ exports.create = async (req, reply) => {
       hra: body.hra?.value,
       esic: body.esic?.value,
       status: body.status?.value,
-      employeePicture: await saveFile(body.employeePicture),
+      employeePicture: await saveFile(getFilePart(body.employeePicture)),
       documents: {
-        addressProof: await saveFile(resolveDocumentPart(body, "addressProof")),
-        educationCertificate: await saveFile(resolveDocumentPart(body, "educationCertificate")),
-        passbookProof: await saveFile(resolveDocumentPart(body, "passbookProof")),
-        PANCardProof: await saveFile(resolveDocumentPart(body, "PANCardProof")),
+        addressProof: await saveFile(getFilePart(resolveDocumentPart(body, "addressProof"))),
+        educationCertificate: await saveFile(getFilePart(resolveDocumentPart(body, "educationCertificate"))),
+        passbookProof: await saveFile(getFilePart(resolveDocumentPart(body, "passbookProof"))),
+        PANCardProof: await saveFile(getFilePart(resolveDocumentPart(body, "PANCardProof"))),
       },
     };
 
@@ -290,11 +308,11 @@ exports.update = async (req, reply) => {
       return reply.code(404).send({ message: "Employee not found" });
     }
 
-    // Helper to safely delete old files
+    // Helper to delete old files safely
     const deleteOldFile = (filePath) => {
       if (!filePath) return;
       try {
-        const absolutePath = path.join(__dirname, "..", filePath);
+        const absolutePath = path.join(__dirname, "..", filePath.replace(/^\/+/, ""));
         if (fs.existsSync(absolutePath)) {
           fs.unlinkSync(absolutePath);
         }
@@ -303,26 +321,22 @@ exports.update = async (req, reply) => {
       }
     };
 
-    // Loop through each field in request body
     for (const key in body) {
       if (!Object.prototype.hasOwnProperty.call(body, key)) continue;
       const part = body[key];
 
-      // Handle uploaded files
+      // ✅ Handle uploaded files with full URL
       if (part && typeof part.toBuffer === "function") {
-        const newFilePath = await saveFile(part);
+        const newFilePath = await saveFile(part, req);
 
         if (key.startsWith("documents.")) {
           const docKey = key.split(".")[1];
-          // Delete old document file if it exists
           if (employee.documents?.[docKey]) {
             deleteOldFile(employee.documents[docKey]);
           }
-          // Save new file path
           if (!employee.documents) employee.documents = {};
           employee.documents[docKey] = newFilePath;
         } else if (key === "employeePicture") {
-          // Delete old profile image if exists
           if (employee.employeePicture) {
             deleteOldFile(employee.employeePicture);
           }
@@ -330,7 +344,7 @@ exports.update = async (req, reply) => {
         }
       }
 
-      // Handle normal fields
+      // Handle normal field updates
       else if (part && part.value !== undefined) {
         if (key.includes(".")) {
           const [parent, child] = key.split(".");
