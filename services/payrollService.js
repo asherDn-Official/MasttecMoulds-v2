@@ -142,6 +142,20 @@ class PayrollService {
   }
 
   /**
+   * Round hours up to the next 0.5 increment and ensure two decimals
+   * @param {number} hours - Hours value
+   * @returns {number} Rounded hours
+   */
+  roundUpToHalfHour(hours) {
+    if (typeof hours !== "number" || isNaN(hours) || hours <= 0) {
+      return 0;
+    }
+
+    const rounded = Math.ceil(hours * 2 - Number.EPSILON) / 2;
+    return parseFloat(rounded.toFixed(2));
+  }
+
+  /**
    * Calculate OT1 hours (overtime on regular working days)
    * @param {string} timeIn - Time in (format: HH:MM)
    * @param {string} timeOut - Time out (format: HH:MM)
@@ -150,76 +164,136 @@ class PayrollService {
    * @param {string} shiftType - Optional shift type parameter
    * @returns {number} OT1 hours
    */
-  calculateOT1Hours(timeIn, timeOut, status, ot1, shiftType = null) {
-    // If OT1 is already calculated in attendance record, use that
-    if (ot1 && ot1.trim() !== "") {
-      // Handle different time formats (HH:MM or decimal)
-      if (ot1.includes(":")) {
-        const [hours, minutes] = ot1.split(":").map(Number);
-        return isNaN(hours) || isNaN(minutes) ? 0 : hours + minutes / 60;
-      } else {
-        const hours = parseFloat(ot1);
-        return isNaN(hours) ? 0 : hours;
-      }
+  // calculateOT1Hours(timeIn, timeOut, status, ot1, shiftType = null) {
+  //   // If OT1 is already calculated in attendance record, use that
+  //   if (ot1 && ot1.trim() !== "") {
+  //     // Handle different time formats (HH:MM or decimal)
+  //     if (ot1.includes(":")) {
+  //       const [hours, minutes] = ot1.split(":").map(Number);
+  //       return isNaN(hours) || isNaN(minutes) ? 0 : hours + minutes / 60;
+  //     } else {
+  //       const hours = parseFloat(ot1);
+  //       return isNaN(hours) ? 0 : hours;
+  //     }
+  //   }
+
+  //   // If status is not present, return 0
+  //   if (status !== "PRE" && status !== "P") {
+  //     return 0;
+  //   }
+
+  //   // Parse timeOut
+  //   if (!timeOut || timeOut.trim() === "") {
+  //     return 0;
+  //   }
+
+  //   try {
+  //     // Determine shift type based on timeIn and timeOut
+  //     const shiftConfig = shiftType
+  //       ? this.getShiftConfigByType(shiftType)
+  //       : this.determineShiftType(timeIn, timeOut);
+
+  //     const [outHours, outMinutes] = timeOut.split(":").map(Number);
+
+  //     // Check if parsing was successful
+  //     if (isNaN(outHours) || isNaN(outMinutes)) {
+  //       console.log(`Invalid timeOut format: ${timeOut}`);
+  //       return 0;
+  //     }
+
+  //     // Calculate minutes after shift end time
+  //     let totalOutMinutes = outHours * 60 + outMinutes;
+  //     let totalShiftEndMinutes =
+  //       shiftConfig.endTime.hours * 60 + shiftConfig.endTime.minutes;
+
+  //     // Handle night shift crossover (ends at 3 AM next day)
+  //     if (shiftConfig.type === "night") {
+  //       if (totalOutMinutes < 720) {
+  //         // If timeOut is in AM (before 12:00 PM)
+  //         totalOutMinutes += 24 * 60; // Add 24 hours to handle next day
+  //       }
+  //       totalShiftEndMinutes += 24 * 60; // Night shift end time is next day
+  //     }
+
+  //     // Only count OT if worked more than 30 minutes after shift end time
+  //     if (totalOutMinutes > totalShiftEndMinutes + 30) {
+  //       const overtimeMinutes = totalOutMinutes - totalShiftEndMinutes;
+  //       const otHours = parseFloat((overtimeMinutes / 60).toFixed(2));
+
+  //       console.log(
+  //         `OT1 Calculation - Shift: ${shiftConfig.description}, End: ${shiftConfig.endTime.hours}:${shiftConfig.endTime.minutes}, Out: ${timeOut}, OT: ${otHours}h`
+  //       );
+  //       return otHours;
+  //     }
+  //   } catch (error) {
+  //     console.error(
+  //       `Error calculating OT1 hours for timeOut ${timeOut}:`,
+  //       error
+  //     );
+  //   }
+
+  //   return 0;
+  // }
+calculateOT1Hours(timeIn, timeOut, status, ot1, shiftType = null) {
+  if (ot1 && ot1.trim() !== "") {
+    if (ot1.includes(":")) {
+      const [hours, minutes] = ot1.split(":").map(Number);
+      return isNaN(hours) || isNaN(minutes) ? 0 : hours + minutes / 60;
+    } else {
+      const hours = parseFloat(ot1);
+      return isNaN(hours) ? 0 : hours;
     }
+  }
 
-    // If status is not present, return 0
-    if (status !== "PRE" && status !== "P") {
-      return 0;
-    }
-
-    // Parse timeOut
-    if (!timeOut || timeOut.trim() === "") {
-      return 0;
-    }
-
-    try {
-      // Determine shift type based on timeIn and timeOut
-      const shiftConfig = shiftType
-        ? this.getShiftConfigByType(shiftType)
-        : this.determineShiftType(timeIn, timeOut);
-
-      const [outHours, outMinutes] = timeOut.split(":").map(Number);
-
-      // Check if parsing was successful
-      if (isNaN(outHours) || isNaN(outMinutes)) {
-        console.log(`Invalid timeOut format: ${timeOut}`);
-        return 0;
-      }
-
-      // Calculate minutes after shift end time
-      let totalOutMinutes = outHours * 60 + outMinutes;
-      let totalShiftEndMinutes =
-        shiftConfig.endTime.hours * 60 + shiftConfig.endTime.minutes;
-
-      // Handle night shift crossover (ends at 3 AM next day)
-      if (shiftConfig.type === "night") {
-        if (totalOutMinutes < 720) {
-          // If timeOut is in AM (before 12:00 PM)
-          totalOutMinutes += 24 * 60; // Add 24 hours to handle next day
-        }
-        totalShiftEndMinutes += 24 * 60; // Night shift end time is next day
-      }
-
-      // Only count OT if worked more than 30 minutes after shift end time
-      if (totalOutMinutes > totalShiftEndMinutes + 30) {
-        const overtimeMinutes = totalOutMinutes - totalShiftEndMinutes;
-        const otHours = parseFloat((overtimeMinutes / 60).toFixed(2));
-
-        console.log(
-          `OT1 Calculation - Shift: ${shiftConfig.description}, End: ${shiftConfig.endTime.hours}:${shiftConfig.endTime.minutes}, Out: ${timeOut}, OT: ${otHours}h`
-        );
-        return otHours;
-      }
-    } catch (error) {
-      console.error(
-        `Error calculating OT1 hours for timeOut ${timeOut}:`,
-        error
-      );
-    }
-
+  if (status !== "PRE" && status !== "P") {
     return 0;
   }
+
+  if (!timeOut || timeOut.trim() === "") {
+    return 0;
+  }
+
+  try {
+    const shiftConfig = shiftType
+      ? this.getShiftConfigByType(shiftType)
+      : this.determineShiftType(timeIn, timeOut);
+
+    const [outHours, outMinutes] = timeOut.split(":").map(Number);
+    if (isNaN(outHours) || isNaN(outMinutes)) {
+      console.log(`Invalid timeOut format: ${timeOut}`);
+      return 0;
+    }
+
+    let totalOutMinutes = outHours * 60 + outMinutes;
+    let totalShiftEndMinutes =
+      shiftConfig.endTime.hours * 60 + shiftConfig.endTime.minutes;
+
+    if (shiftConfig.type === "night") {
+      if (totalOutMinutes < 720) {
+        totalOutMinutes += 24 * 60;
+      }
+      totalShiftEndMinutes += 24 * 60;
+    }
+
+    if (totalOutMinutes > totalShiftEndMinutes + 30) {
+      const overtimeMinutes = totalOutMinutes - totalShiftEndMinutes;
+      const otHours = overtimeMinutes / 60;
+
+      // ✅ Round up to the next 0.5 hour increment and fix to 2 decimals
+      const roundedOtHours = this.roundUpToHalfHour(otHours);
+      if (roundedOtHours > 0) {
+        console.log(
+          `OT1 Calculation - Shift: ${shiftConfig.description}, End: ${shiftConfig.endTime.hours}:${shiftConfig.endTime.minutes}, Out: ${timeOut}, OT: ${roundedOtHours}h`
+        );
+        return roundedOtHours;
+      }
+    }
+  } catch (error) {
+    console.error(`Error calculating OT1 hours for timeOut ${timeOut}:`, error);
+  }
+
+  return 0;
+}
 
   /**
    * Get shift configuration by type
@@ -261,58 +335,107 @@ class PayrollService {
    * @param {string} shiftType - Optional shift type parameter
    * @returns {number} OT2 hours
    */
-  calculateOT2Hours(timeIn, timeOut, workedHrs, status, ot2, shiftType = null) {
-    // If OT2 is already calculated in attendance record, use that
-    if (ot2 && ot2.trim() !== "") {
-      // Handle different time formats (HH:MM or decimal)
-      if (ot2.includes(":")) {
-        const [hours, minutes] = ot2.split(":").map(Number);
-        return isNaN(hours) || isNaN(minutes) ? 0 : hours + minutes / 60;
-      } else {
-        const hours = parseFloat(ot2);
-        return isNaN(hours) ? 0 : hours;
-      }
+  // calculateOT2Hours(timeIn, timeOut, workedHrs, status, ot2, shiftType = null) {
+  //   // If OT2 is already calculated in attendance record, use that
+  //   if (ot2 && ot2.trim() !== "") {
+  //     // Handle different time formats (HH:MM or decimal)
+  //     if (ot2.includes(":")) {
+  //       const [hours, minutes] = ot2.split(":").map(Number);
+  //       return isNaN(hours) || isNaN(minutes) ? 0 : hours + minutes / 60;
+  //     } else {
+  //       const hours = parseFloat(ot2);
+  //       return isNaN(hours) ? 0 : hours;
+  //     }
+  //   }
+
+  //   // If status is OFF, W, or H (weekend or holiday), all worked hours are OT2
+  //   if (status === "OFF" || status === "W" || status === "H") {
+  //     // Use workedHrs if available, otherwise calculate from timeIn/timeOut
+  //     let hoursWorked = 0;
+
+  //     if (workedHrs && workedHrs.trim() !== "") {
+  //       try {
+  //         // Handle different time formats (HH:MM or decimal)
+  //         if (workedHrs.includes(":")) {
+  //           const [hours, minutes] = workedHrs.split(":").map(Number);
+  //           hoursWorked =
+  //             isNaN(hours) || isNaN(minutes) ? 0 : hours + minutes / 60;
+  //         } else {
+  //           hoursWorked = parseFloat(workedHrs);
+  //           hoursWorked = isNaN(hoursWorked) ? 0 : hoursWorked;
+  //         }
+  //       } catch (error) {
+  //         console.error(
+  //           `Error calculating OT2 hours for workedHrs ${workedHrs}:`,
+  //           error
+  //         );
+  //         hoursWorked = 0;
+  //       }
+  //     } else {
+  //       // Calculate from timeIn and timeOut
+  //       hoursWorked = this.calculateWorkedHours(timeIn, timeOut, "");
+  //     }
+
+  //     // Only count OT2 if worked more than 30 minutes (0.5 hours)
+  //     if (hoursWorked > 0.5) {
+  //       console.log(
+  //         `OT2 Calculation - Holiday/Weekend: Status=${status}, Worked=${hoursWorked}h`
+  //       );
+  //       return parseFloat(hoursWorked.toFixed(2));
+  //     }
+  //   }
+
+  //   return 0;
+  // }
+calculateOT2Hours(timeIn, timeOut, workedHrs, status, ot2, shiftType = null) {
+  if (ot2 && ot2.trim() !== "") {
+    if (ot2.includes(":")) {
+      const [hours, minutes] = ot2.split(":").map(Number);
+      return isNaN(hours) || isNaN(minutes) ? 0 : hours + minutes / 60;
+    } else {
+      const hours = parseFloat(ot2);
+      return isNaN(hours) ? 0 : hours;
     }
-
-    // If status is OFF, W, or H (weekend or holiday), all worked hours are OT2
-    if (status === "OFF" || status === "W" || status === "H") {
-      // Use workedHrs if available, otherwise calculate from timeIn/timeOut
-      let hoursWorked = 0;
-
-      if (workedHrs && workedHrs.trim() !== "") {
-        try {
-          // Handle different time formats (HH:MM or decimal)
-          if (workedHrs.includes(":")) {
-            const [hours, minutes] = workedHrs.split(":").map(Number);
-            hoursWorked =
-              isNaN(hours) || isNaN(minutes) ? 0 : hours + minutes / 60;
-          } else {
-            hoursWorked = parseFloat(workedHrs);
-            hoursWorked = isNaN(hoursWorked) ? 0 : hoursWorked;
-          }
-        } catch (error) {
-          console.error(
-            `Error calculating OT2 hours for workedHrs ${workedHrs}:`,
-            error
-          );
-          hoursWorked = 0;
-        }
-      } else {
-        // Calculate from timeIn and timeOut
-        hoursWorked = this.calculateWorkedHours(timeIn, timeOut, "");
-      }
-
-      // Only count OT2 if worked more than 30 minutes (0.5 hours)
-      if (hoursWorked > 0.5) {
-        console.log(
-          `OT2 Calculation - Holiday/Weekend: Status=${status}, Worked=${hoursWorked}h`
-        );
-        return parseFloat(hoursWorked.toFixed(2));
-      }
-    }
-
-    return 0;
   }
+
+  if (status === "OFF" || status === "W" || status === "H") {
+    let hoursWorked = 0;
+
+    if (workedHrs && workedHrs.trim() !== "") {
+      try {
+        if (workedHrs.includes(":")) {
+          const [hours, minutes] = workedHrs.split(":").map(Number);
+          hoursWorked =
+            isNaN(hours) || isNaN(minutes) ? 0 : hours + minutes / 60;
+        } else {
+          hoursWorked = parseFloat(workedHrs);
+          hoursWorked = isNaN(hoursWorked) ? 0 : hoursWorked;
+        }
+      } catch (error) {
+        console.error(
+          `Error calculating OT2 hours for workedHrs ${workedHrs}:`,
+          error
+        );
+        hoursWorked = 0;
+      }
+    } else {
+      hoursWorked = this.calculateWorkedHours(timeIn, timeOut, "");
+    }
+
+    if (hoursWorked > 0.5) {
+      // ✅ Round up to the next 0.5 hour increment and fix to 2 decimals
+      const roundedHoursWorked = this.roundUpToHalfHour(hoursWorked);
+      if (roundedHoursWorked > 0) {
+        console.log(
+          `OT2 Calculation - Holiday/Weekend: Status=${status}, Worked=${roundedHoursWorked}h`
+        );
+        return roundedHoursWorked;
+      }
+    }
+  }
+
+  return 0;
+}
 
   /**
    * Calculate worked hours from time in and time out
@@ -416,14 +539,26 @@ class PayrollService {
 
     for (const day of dailyAttendance) {
       if (day.ot1 && !isNaN(parseFloat(day.ot1))) {
-        totalOT1Hours += parseFloat(day.ot1);
+        const ot1Value = this.roundUpToHalfHour(parseFloat(day.ot1));
+        if (ot1Value > 0) {
+          totalOT1Hours += ot1Value;
+        }
       }
       if (day.ot2 && !isNaN(parseFloat(day.ot2))) {
-        totalOT2Hours += parseFloat(day.ot2);
+        const ot2Value = this.roundUpToHalfHour(parseFloat(day.ot2));
+        if (ot2Value > 0) {
+          totalOT2Hours += ot2Value;
+        }
       }
     }
 
-    return { totalOT1Hours, totalOT2Hours };
+    const roundedTotalOT1 = this.roundUpToHalfHour(totalOT1Hours);
+    const roundedTotalOT2 = this.roundUpToHalfHour(totalOT2Hours);
+
+    return {
+      totalOT1Hours: roundedTotalOT1,
+      totalOT2Hours: roundedTotalOT2,
+    };
   }
 
   // Calculate monthly late hours from daily attendance
