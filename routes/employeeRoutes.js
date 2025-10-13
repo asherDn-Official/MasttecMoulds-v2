@@ -118,10 +118,10 @@ const employeeRoutes = async (fastify, options) => {
             },
           },
           bankDetails: {
-            // type: "object",
+            type: "object",
             properties: {
               value: {
-                // type: "object",
+                type: "object",
                 properties: {
                   bankName: { type: "string", example: "SBI" },
                   bankBranch: { type: "string", example: "Bangalore Main" },
@@ -265,395 +265,487 @@ const employeeRoutes = async (fastify, options) => {
   };
 
   fastify.post("/", createOpts, employeeController.create);
-fastify.get("/", {
-  schema: {
-    tags: ["Employee"],
-    summary: "Get all employees",
-    description: "Fetch employees with optional filters, search, and pagination",
-    querystring: {
-      type: "object",
-      properties: {
-        search: {
-          type: "string",
-          description: "Search by name, ID, mobile, email",
-          example: "John"
+  fastify.get(
+    "/",
+    {
+      schema: {
+        tags: ["Employee"],
+        summary: "Get all employees",
+        description:
+          "Fetch employees with optional filters, search, and pagination",
+        querystring: {
+          type: "object",
+          properties: {
+            search: {
+              type: "string",
+              description: "Search by name, ID, mobile, email",
+              example: "John",
+            },
+            department: {
+              type: "string",
+              description: "Filter by department",
+              example: "HR",
+            },
+            designation: {
+              type: "string",
+              description: "Filter by designation",
+              example: "Manager",
+            },
+            status: {
+              type: "boolean",
+              description: "Filter by active/inactive",
+              example: true,
+            },
+            page: { type: "integer", minimum: 1, default: 1, example: 2 },
+            limit: {
+              type: "integer",
+              minimum: 1,
+              maximum: 100,
+              default: 10,
+              example: 5,
+            },
+          },
+          examples: [
+            {
+              search: "John",
+              page: 1,
+              limit: 10,
+            },
+            {
+              department: "HR",
+              status: true,
+            },
+            {
+              search: "EMP123",
+              department: "HR",
+              page: 2,
+              limit: 5,
+            },
+          ],
         },
-        department: { type: "string", description: "Filter by department", example: "HR" },
-        designation: { type: "string", description: "Filter by designation", example: "Manager" },
-        status: { type: "boolean", description: "Filter by active/inactive", example: true },
-        page: { type: "integer", minimum: 1, default: 1, example: 2 },
-        limit: { type: "integer", minimum: 1, maximum: 100, default: 10, example: 5 }
-      },
-      examples: [
-        {
-          search: "John",
-          page: 1,
-          limit: 10
-        },
-        {
-          department: "HR",
-          status: true
-        },
-        {
-          search: "EMP123",
-          department: "HR",
-          page: 2,
-          limit: 5
-        }
-      ]
-    },
-    response: {
-      200: {
-        description: "List of employees",
-        type: "object",
-        properties: {
-          status: { type: "string", example: "success" },
-          pagination: {
+        response: {
+          200: {
+            description: "List of employees",
             type: "object",
             properties: {
-              totalItems: { type: "integer", example: 50 },
-              totalPages: { type: "integer", example: 5 },
-              currentPage: { type: "integer", example: 1 }
-            }
+              status: { type: "string", example: "success" },
+              pagination: {
+                type: "object",
+                properties: {
+                  totalItems: { type: "integer", example: 50 },
+                  totalPages: { type: "integer", example: 5 },
+                  currentPage: { type: "integer", example: 1 },
+                },
+              },
+              data: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    _id: { type: "string", example: "64f1a1c0b45e23" },
+                    employeeName: { type: "string", example: "John Doe" },
+                    employeePicture: {
+                      type: "string",
+                      example: "/uploads/employees/johndoe.png",
+                    },
+                    employeeId: { type: "string", example: "EMP123" },
+                    department: { type: "string", example: "HR" },
+                    departmentCode: { type: "string", example: "HR01" },
+                    designation: { type: "string", example: "Manager" },
+                    qualification: { type: "string", example: "MBA" },
+                    dateOfBirth: {
+                      type: "string",
+                      format: "date",
+                      example: "1995-08-15",
+                    },
+                    dateOfJoining: {
+                      type: "string",
+                      format: "date",
+                      example: "2023-05-01",
+                    },
+                    bloodGroup: { type: "string", example: "O+" },
+                    mobileNumber: { type: "string", example: "9876543210" },
+                    mailId: { type: "string", example: "employee@example.com" },
+                    address: { type: "string", example: "123 Street, City" },
+                    bankDetails: {
+                      type: "object",
+                      properties: {
+                        bankName: { type: "string", example: "SBI" },
+                        bankBranch: {
+                          type: "string",
+                          example: "Bangalore Main",
+                        },
+                        bankAccountNumber: {
+                          type: "string",
+                          example: "123456789012",
+                        },
+                        bankIFSCCode: {
+                          type: "string",
+                          example: "SBIN0001234",
+                        },
+                      },
+                    },
+                    PANNumber: { type: "string", example: "ABCDE1234F" },
+                    aadhaarNo: { type: "string", example: "123412341234" },
+                    UANNo: { type: "string", example: "123456789012" },
+                    esicId: { type: "string", example: "ESIC123456" },
+                    epfId: { type: "string", example: "EPF123456" },
+                    documents: {
+                      type: "object",
+                      properties: {
+                        addressProof: {
+                          type: "string",
+                          example: "/uploads/docs/address.pdf",
+                        },
+                        educationCertificate: {
+                          type: "string",
+                          example: "/uploads/docs/education.pdf",
+                        },
+                        passbookProof: {
+                          type: "string",
+                          example: "/uploads/docs/passbook.pdf",
+                        },
+                        PANCardProof: {
+                          type: "string",
+                          example: "/uploads/docs/pan.pdf",
+                        },
+                      },
+                    },
+                    salary: { type: "number", example: 40000 },
+                    allowance: { type: "number", example: 5000 },
+                    hra: { type: "number", example: 8000 },
+                    esic: { type: "number", example: 2000 },
+                    status: { type: "boolean", example: true },
+                    createdAt: {
+                      type: "string",
+                      format: "date-time",
+                      example: "2025-09-16T09:15:00Z",
+                    },
+                    updatedAt: {
+                      type: "string",
+                      format: "date-time",
+                      example: "2025-09-16T10:15:00Z",
+                    },
+                  },
+                },
+              },
+            },
+            examples: [
+              {
+                status: "success",
+                pagination: { totalItems: 2, totalPages: 1, currentPage: 1 },
+                data: [
+                  {
+                    _id: "64f1a1c0b45e23",
+                    employeeName: "John Doe",
+                    employeePicture: "/uploads/employees/johndoe.png",
+                    employeeId: "EMP123",
+                    department: "HR",
+                    designation: "Manager",
+                    mobileNumber: "9876543210",
+                    status: true,
+                    createdAt: "2025-09-16T09:15:00Z",
+                    updatedAt: "2025-09-16T10:15:00Z",
+                  },
+                  {
+                    _id: "64f1a1c0b45e24",
+                    employeeName: "Jane Smith",
+                    employeePicture: "/uploads/employees/janesmith.png",
+                    employeeId: "EMP124",
+                    department: "Finance",
+                    designation: "Analyst",
+                    mobileNumber: "9876543211",
+                    status: true,
+                    createdAt: "2025-09-16T09:20:00Z",
+                    updatedAt: "2025-09-16T09:50:00Z",
+                  },
+                ],
+              },
+            ],
           },
-          data: {
-            type: "array",
-            items: {
+          500: {
+            description: "Server error",
+            type: "object",
+            properties: {
+              message: { type: "string", example: "Server error" },
+              error: { type: "string", example: "Database connection failed" },
+            },
+          },
+        },
+      },
+    },
+    employeeController.getAll
+  );
+
+  // const getByIdOpts = {
+  //     schema: {
+  //       tags: ["Employee"],
+  //       summary: "Get a single employee by ID",
+  //       description: "Fetches the details of a specific employee using their unique MongoDB ID.",
+  //       params: {
+  //         type: "object",
+  //         required: ["id"],
+  //         properties: {
+  //           id: {
+  //             type: "string",
+  //             description: "Employee's unique MongoDB ID",
+  //             example: "60c72b2f9b1d8c001f8e4d1c",
+  //           },
+  //         },
+  //       },
+  //       response: {
+  //         200: {
+  //           description: "Successful response",
+  //           type: "object",
+  //           properties: {
+  //             _id: { type: "string" },
+  //             employeeName: { type: "string" },
+  //             employeePicture: { type: "string" },
+  //             employeeId: { type: "string" },
+  //             department: { type: "string" },
+  //             designation: { type: "string" },
+  //             mobileNumber: { type: "string" },
+  //             mailId: { type: "string" },
+  //             status: { type: "boolean" },
+  //             // Add all other employee fields you want to return
+  //             createdAt: { type: "string", format: "date-time" },
+  //             updatedAt: { type: "string", format: "date-time" },
+  //           },
+  //         },
+  //         404: {
+  //           description: "Employee not found",
+  //           type: "object",
+  //           properties: {
+  //             message: { type: "string", example: "Employee not found" },
+  //           },
+  //         },
+  //         400: {
+  //           description: "Invalid ID format",
+  //           type: "object",
+  //           properties: {
+  //             message: { type: "string", example: "Invalid employee ID format" },
+  //           },
+  //         },
+  //         500: {
+  //           description: "Server error",
+  //           type: "object",
+  //           properties: {
+  //             message: { type: "string" },
+  //             error: { type: "string" },
+  //           },
+  //         },
+  //       },
+  //     },
+  //   };
+  const getByIdOpts = {
+    schema: {
+      tags: ["Employee"],
+      summary: "Get a single employee by ID",
+      description:
+        "Fetches the details of a specific employee using their unique MongoDB ID.",
+      params: {
+        type: "object",
+        required: ["id"],
+        properties: {
+          id: {
+            type: "string",
+            description: "Employee's unique MongoDB ID",
+            example: "68e0e27065e183a5bf1371de",
+          },
+        },
+      },
+      response: {
+        200: {
+          description: "Successful response",
+          type: "object",
+          properties: {
+            _id: { type: "string" },
+            employeeName: { type: "string" },
+            employeePicture: { type: "string" },
+            employeeId: { type: "string" },
+            department: { type: "string" },
+            departmentCode: { type: "string" },
+            designation: { type: "string" },
+            qualification: { type: "string" },
+            dateOfBirth: { type: "string", format: "date" },
+            dateOfJoining: { type: "string", format: "date" },
+            bloodGroup: { type: "string" },
+            mobileNumber: { type: "string" },
+            mailId: { type: "string" },
+            address: { type: "string" },
+            bankDetails: {
               type: "object",
               properties: {
-                _id: { type: "string", example: "64f1a1c0b45e23" },
-                employeeName: { type: "string", example: "John Doe" },
-                employeePicture: { type: "string", example: "/uploads/employees/johndoe.png" },
-                employeeId: { type: "string", example: "EMP123" },
-                department: { type: "string", example: "HR" },
-                departmentCode: { type: "string", example: "HR01" },
-                designation: { type: "string", example: "Manager" },
-                qualification: { type: "string", example: "MBA" },
-                dateOfBirth: { type: "string", format: "date", example: "1995-08-15" },
-                dateOfJoining: { type: "string", format: "date", example: "2023-05-01" },
-                bloodGroup: { type: "string", example: "O+" },
-                mobileNumber: { type: "string", example: "9876543210" },
-                mailId: { type: "string", example: "employee@example.com" },
-                address: { type: "string", example: "123 Street, City" },
-                bankDetails: {
-                  type: "object",
-                  properties: {
-                    bankName: { type: "string", example: "SBI" },
-                    bankBranch: { type: "string", example: "Bangalore Main" },
-                    bankAccountNumber: { type: "string", example: "123456789012" },
-                    bankIFSCCode: { type: "string", example: "SBIN0001234" }
-                  }
-                },
-                PANNumber: { type: "string", example: "ABCDE1234F" },
-                aadhaarNo: { type: "string", example: "123412341234" },
-                UANNo: { type: "string", example: "123456789012" },
-                esicId: { type: "string", example: "ESIC123456" },
-                epfId: { type: "string", example: "EPF123456" },
-                documents: {
-                  type: "object",
-                  properties: {
-                    addressProof: { type: "string", example: "/uploads/docs/address.pdf" },
-                    educationCertificate: { type: "string", example: "/uploads/docs/education.pdf" },
-                    passbookProof: { type: "string", example: "/uploads/docs/passbook.pdf" },
-                    PANCardProof: { type: "string", example: "/uploads/docs/pan.pdf" }
-                  }
-                },
-                salary: { type: "number", example: 40000 },
-                allowance: { type: "number", example: 5000 },
-                hra: { type: "number", example: 8000 },
-                esic: { type: "number", example: 2000 },
-                status: { type: "boolean", example: true },
-                createdAt: { type: "string", format: "date-time", example: "2025-09-16T09:15:00Z" },
-                updatedAt: { type: "string", format: "date-time", example: "2025-09-16T10:15:00Z" }
-              }
-            }
-          }
-        },
-        examples: [
-          {
-            status: "success",
-            pagination: { totalItems: 2, totalPages: 1, currentPage: 1 },
-            data: [
-              {
-                _id: "64f1a1c0b45e23",
-                employeeName: "John Doe",
-                employeePicture: "/uploads/employees/johndoe.png",
-                employeeId: "EMP123",
-                department: "HR",
-                designation: "Manager",
-                mobileNumber: "9876543210",
-                status: true,
-                createdAt: "2025-09-16T09:15:00Z",
-                updatedAt: "2025-09-16T10:15:00Z"
+                bankName: { type: "string" },
+                bankBranch: { type: "string" },
+                bankAccountNumber: { type: "string" },
+                bankIFSCCode: { type: "string" },
               },
-              {
-                _id: "64f1a1c0b45e24",
-                employeeName: "Jane Smith",
-                employeePicture: "/uploads/employees/janesmith.png",
-                employeeId: "EMP124",
-                department: "Finance",
-                designation: "Analyst",
-                mobileNumber: "9876543211",
-                status: true,
-                createdAt: "2025-09-16T09:20:00Z",
-                updatedAt: "2025-09-16T09:50:00Z"
-              }
-            ]
-          }
-        ]
+            },
+            PANNumber: { type: "string" },
+            aadhaarNo: { type: "string" },
+            UANNo: { type: "string" },
+            esicId: { type: "string" },
+            epfId: { type: "string" },
+            documents: {
+              type: "object",
+              properties: {
+                addressProof: { type: "string" },
+                educationCertificate: { type: "string" },
+                passbookProof: { type: "string" },
+                PANCardProof: { type: "string" },
+              },
+            },
+            salary: { type: "number" },
+            allowance: { type: "number" },
+            hra: { type: "number" },
+            esic: { type: "number" },
+            status: { type: "boolean" },
+            createdAt: { type: "string", format: "date-time" },
+            updatedAt: { type: "string", format: "date-time" },
+          },
+        },
+        404: {
+          description: "Employee not found",
+          type: "object",
+          properties: {
+            message: { type: "string", example: "Employee not found" },
+          },
+        },
+        400: {
+          description: "Invalid ID format",
+          type: "object",
+          properties: {
+            message: { type: "string", example: "Invalid employee ID format" },
+          },
+        },
+        500: {
+          description: "Server error",
+          type: "object",
+          properties: {
+            message: { type: "string" },
+            error: { type: "string" },
+          },
+        },
       },
-      500: {
-        description: "Server error",
-        type: "object",
-        properties: {
-          message: { type: "string", example: "Server error" },
-          error: { type: "string", example: "Database connection failed" }
-        }
-      }
-    }
-  }
-}, employeeController.getAll);
+    },
+  };
 
-// const getByIdOpts = {
-//     schema: {
-//       tags: ["Employee"],
-//       summary: "Get a single employee by ID",
-//       description: "Fetches the details of a specific employee using their unique MongoDB ID.",
-//       params: {
-//         type: "object",
-//         required: ["id"],
-//         properties: {
-//           id: {
-//             type: "string",
-//             description: "Employee's unique MongoDB ID",
-//             example: "60c72b2f9b1d8c001f8e4d1c",
-//           },
-//         },
-//       },
-//       response: {
-//         200: {
-//           description: "Successful response",
-//           type: "object",
-//           properties: {
-//             _id: { type: "string" },
-//             employeeName: { type: "string" },
-//             employeePicture: { type: "string" },
-//             employeeId: { type: "string" },
-//             department: { type: "string" },
-//             designation: { type: "string" },
-//             mobileNumber: { type: "string" },
-//             mailId: { type: "string" },
-//             status: { type: "boolean" },
-//             // Add all other employee fields you want to return
-//             createdAt: { type: "string", format: "date-time" },
-//             updatedAt: { type: "string", format: "date-time" },
-//           },
-//         },
-//         404: {
-//           description: "Employee not found",
-//           type: "object",
-//           properties: {
-//             message: { type: "string", example: "Employee not found" },
-//           },
-//         },
-//         400: {
-//           description: "Invalid ID format",
-//           type: "object",
-//           properties: {
-//             message: { type: "string", example: "Invalid employee ID format" },
-//           },
-//         },
-//         500: {
-//           description: "Server error",
-//           type: "object",
-//           properties: {
-//             message: { type: "string" },
-//             error: { type: "string" },
-//           },
-//         },
-//       },
-//     },
-//   };
-const getByIdOpts = {
-  schema: {
-    tags: ["Employee"],
-    summary: "Get a single employee by ID",
-    description: "Fetches the details of a specific employee using their unique MongoDB ID.",
-    params: {
-      type: "object",
-      required: ["id"],
-      properties: {
-        id: {
-          type: "string",
-          description: "Employee's unique MongoDB ID",
-          example: "68e0e27065e183a5bf1371de",
-        },
-      },
-    },
-    response: {
-      200: {
-        description: "Successful response",
+  fastify.get("/:id", getByIdOpts, employeeController.getById);
+  const getByEmployeeIdOpts = {
+    schema: {
+      tags: ["Employee"],
+      summary: "Get a single employee by employee ID",
+      description:
+        "Fetches the details of a specific employee using their employeeId field.",
+      params: {
         type: "object",
+        required: ["employeeId"],
         properties: {
-          _id: { type: "string" },
-          employeeName: { type: "string" },
-          employeePicture: { type: "string" },
-          employeeId: { type: "string" },
-          department: { type: "string" },
-          departmentCode: { type: "string" },
-          designation: { type: "string" },
-          qualification: { type: "string" },
-          dateOfBirth: { type: "string", format: "date" },
-          dateOfJoining: { type: "string", format: "date" },
-          bloodGroup: { type: "string" },
-          mobileNumber: { type: "string" },
-          mailId: { type: "string" },
-          address: { type: "string" },
-          bankDetails: {
-            type: "object",
-            properties: {
-              bankName: { type: "string" },
-              bankBranch: { type: "string" },
-              bankAccountNumber: { type: "string" },
-              bankIFSCCode: { type: "string" },
-            },
-          },
-          PANNumber: { type: "string" },
-          aadhaarNo: { type: "string" },
-          UANNo: { type: "string" },
-          esicId: { type: "string" },
-          epfId: { type: "string" },
-          documents: {
-            type: "object",
-            properties: {
-              addressProof: { type: "string" },
-              educationCertificate: { type: "string" },
-              passbookProof: { type: "string" },
-              PANCardProof: { type: "string" },
-            },
-          },
-          salary: { type: "number" },
-          allowance: { type: "number" },
-          hra: { type: "number" },
-          esic: { type: "number" },
-          status: { type: "boolean" },
-          createdAt: { type: "string", format: "date-time" },
-          updatedAt: { type: "string", format: "date-time" },
-        },
-      },
-      404: {
-        description: "Employee not found",
-        type: "object",
-        properties: {
-          message: { type: "string", example: "Employee not found" },
-        },
-      },
-      400: {
-        description: "Invalid ID format",
-        type: "object",
-        properties: {
-          message: { type: "string", example: "Invalid employee ID format" },
-        },
-      },
-      500: {
-        description: "Server error",
-        type: "object",
-        properties: {
-          message: { type: "string" },
-          error: { type: "string" },
-        },
-      },
-    },
-  },
-};
-
-fastify.get("/:id", getByIdOpts, employeeController.getById);
-const getByEmployeeIdOpts = {
-  schema: {
-    tags: ["Employee"],
-    summary: "Get a single employee by employee ID",
-    description: "Fetches the details of a specific employee using their employeeId field.",
-    params: {
-      type: "object",
-      required: ["employeeId"],
-      properties: {
-        employeeId: {
-          type: "string",
-          description: "Unique Employee ID",
-          example: "EMP1001",
-        },
-      },
-    },
-    response: {
-      200: {
-        description: "Successful response",
-        type: "object",
-        properties: {
-          _id: { type: "string", example: "68e0ce0649e70e64b37ceea2" },
-          employeeName: { type: "string", example: "John Doe" },
-          employeePicture: { type: ["string", "null"], example: null },
-          employeeId: { type: "string", example: "EMP1001" },
-          department: { type: "string", example: "HR" },
-          departmentCode: { type: "string", example: "HR01" },
-          designation: { type: "string", example: "HR Manager" },
-          qualification: { type: "string", example: "MBA" },
-          dateOfBirth: { type: "string", format: "date", example: "1990-05-12" },
-          dateOfJoining: { type: "string", format: "date", example: "2020-08-01" },
-          bloodGroup: { type: "string", example: "O+" },
-          mobileNumber: { type: "string", example: "9876543210" },
-          mailId: { type: "string", example: "johndoe@example.com" },
-          address: { type: "string", example: "221B Baker Street, London" },
-          bankDetails: {
-            type: "object",
-            properties: {
-              bankName: { type: "string", example: "State Bank of India" },
-              bankBranch: { type: "string", example: "Chennai Main" },
-              bankAccountNumber: { type: "string", example: "123456789012" },
-              bankIFSCCode: { type: "string", example: "SBIN0001234" },
-            },
-          },
-          PANNumber: { type: "string", example: "ABCDE1234F" },
-          aadhaarNo: { type: "string", example: "123412341234" },
-          UANNo: { type: "string", example: "100200300400" },
-          esicId: { type: "string", example: "ESIC001122" },
-          epfId: { type: "string", example: "EPF556677" },
-          documents: { type: "object" },
-          salary: { type: "number", example: 60000 },
-          allowance: { type: "number", example: 5000 },
-          hra: { type: "number", example: 8000 },
-          esic: { type: "number", example: 1000 },
-          password: {
+          employeeId: {
             type: "string",
-            description: "Hashed password",
-            example: "$2a$10$Ws0J/KfYzn9.kDZxOMkHTOLF9DpVu4um0qh9TnIqD.m6kO0gFwn9i",
+            description: "Unique Employee ID",
+            example: "EMP1001",
           },
-          status: { type: "boolean", example: true },
-          createdAt: { type: "string", format: "date-time", example: "2025-10-04T07:34:30.890Z" },
-          updatedAt: { type: "string", format: "date-time", example: "2025-10-04T07:34:30.890Z" },
-          __v: { type: "number", example: 0 },
         },
       },
-      404: {
-        description: "Employee not found",
-        type: "object",
-        properties: { message: { type: "string", example: "Employee not found" } },
-      },
-      500: {
-        description: "Server error",
-        type: "object",
-        properties: { message: { type: "string" }, error: { type: "string" } },
+      response: {
+        200: {
+          description: "Successful response",
+          type: "object",
+          properties: {
+            _id: { type: "string", example: "68e0ce0649e70e64b37ceea2" },
+            employeeName: { type: "string", example: "John Doe" },
+            employeePicture: { type: ["string", "null"], example: null },
+            employeeId: { type: "string", example: "EMP1001" },
+            department: { type: "string", example: "HR" },
+            departmentCode: { type: "string", example: "HR01" },
+            designation: { type: "string", example: "HR Manager" },
+            qualification: { type: "string", example: "MBA" },
+            dateOfBirth: {
+              type: "string",
+              format: "date",
+              example: "1990-05-12",
+            },
+            dateOfJoining: {
+              type: "string",
+              format: "date",
+              example: "2020-08-01",
+            },
+            bloodGroup: { type: "string", example: "O+" },
+            mobileNumber: { type: "string", example: "9876543210" },
+            mailId: { type: "string", example: "johndoe@example.com" },
+            address: { type: "string", example: "221B Baker Street, London" },
+            bankDetails: {
+              type: "object",
+              properties: {
+                bankName: { type: "string", example: "State Bank of India" },
+                bankBranch: { type: "string", example: "Chennai Main" },
+                bankAccountNumber: { type: "string", example: "123456789012" },
+                bankIFSCCode: { type: "string", example: "SBIN0001234" },
+              },
+            },
+            PANNumber: { type: "string", example: "ABCDE1234F" },
+            aadhaarNo: { type: "string", example: "123412341234" },
+            UANNo: { type: "string", example: "100200300400" },
+            esicId: { type: "string", example: "ESIC001122" },
+            epfId: { type: "string", example: "EPF556677" },
+            documents: { type: "object" },
+            salary: { type: "number", example: 60000 },
+            allowance: { type: "number", example: 5000 },
+            hra: { type: "number", example: 8000 },
+            esic: { type: "number", example: 1000 },
+            password: {
+              type: "string",
+              description: "Hashed password",
+              example:
+                "$2a$10$Ws0J/KfYzn9.kDZxOMkHTOLF9DpVu4um0qh9TnIqD.m6kO0gFwn9i",
+            },
+            status: { type: "boolean", example: true },
+            createdAt: {
+              type: "string",
+              format: "date-time",
+              example: "2025-10-04T07:34:30.890Z",
+            },
+            updatedAt: {
+              type: "string",
+              format: "date-time",
+              example: "2025-10-04T07:34:30.890Z",
+            },
+            __v: { type: "number", example: 0 },
+          },
+        },
+        404: {
+          description: "Employee not found",
+          type: "object",
+          properties: {
+            message: { type: "string", example: "Employee not found" },
+          },
+        },
+        500: {
+          description: "Server error",
+          type: "object",
+          properties: {
+            message: { type: "string" },
+            error: { type: "string" },
+          },
+        },
       },
     },
-  },
-};
+  };
 
-fastify.get("/by-employee-id/:employeeId", getByEmployeeIdOpts, employeeController.getByEmployeeId);
+  fastify.get(
+    "/by-employee-id/:employeeId",
+    getByEmployeeIdOpts,
+    employeeController.getByEmployeeId
+  );
 
-const updateOpts = {
+  const updateOpts = {
     schema: {
       tags: ["Employee"],
       summary: "Update an employee",
-      description: "Updates an existing employee's details by their ID. All fields are optional.",
+      description:
+        "Updates an existing employee's details by their ID. All fields are optional.",
       consumes: ["multipart/form-data"],
       params: {
         type: "object",
@@ -664,7 +756,7 @@ const updateOpts = {
       },
       body: {
         type: "object",
-        
+
         properties: {
           employeeName: {
             type: "object",
@@ -702,20 +794,23 @@ const updateOpts = {
             type: "object",
             properties: { value: { type: "string", maxLength: 255 } },
           },
-          bankDetails: {
+          bankName: {
             type: "object",
-            properties: {
-              value: {
-                type: "object",
-                properties: {
-                  bankName: { type: "string" },
-                  bankBranch: { type: "string" },
-                  bankAccountNumber: { type: "string", pattern: "^\\d{9,18}$" },
-                  bankIFSCCode: { type: "string", pattern: "^[A-Z]{4}0[A-Z0-9]{6}$" },
-                },
-              },
-            },
+            properties: { value: { type: "string", maxLength: 30 } },
           },
+          bankBranch: {
+            type: "object",
+            properties: { value: { type: "string", maxLength: 30 } },
+          },
+          bankAccountNumber: {
+            type: "object",
+            properties: { value: { type: "string", maxLength: 30, pattern: "^\\d{9,18}$"  } },
+          },
+          bankIFSCCode: {
+            type: "object",
+            properties: { value: { type: "string", maxLength: 30,pattern: "^[A-Z]{4}0[A-Z0-9]{6}$" } },
+          },
+      
           PANNumber: {
             type: "object",
             properties: {
@@ -729,10 +824,22 @@ const updateOpts = {
           documents: {
             type: "object",
             properties: {
-              addressProof: { type: "object", description: "Upload new Address Proof" },
-              educationCertificate: { type: "object", description: "Upload new Education Certificate" },
-              passbookProof: { type: "object", description: "Upload new Bank Passbook" },
-              PANCardProof: { type: "object", description: "Upload new PAN Card" },
+              addressProof: {
+                type: "object",
+                description: "Upload new Address Proof",
+              },
+              educationCertificate: {
+                type: "object",
+                description: "Upload new Education Certificate",
+              },
+              passbookProof: {
+                type: "object",
+                description: "Upload new Bank Passbook",
+              },
+              PANCardProof: {
+                type: "object",
+                description: "Upload new PAN Card",
+              },
             },
           },
           salary: {
@@ -797,7 +904,10 @@ const updateOpts = {
           description: "Employee deleted successfully",
           type: "object",
           properties: {
-            message: { type: "string", example: "Employee deleted successfully" },
+            message: {
+              type: "string",
+              example: "Employee deleted successfully",
+            },
           },
         },
         404: {
@@ -821,47 +931,49 @@ const updateOpts = {
 
   fastify.delete("/:id", deleteOpts, employeeController.deleteById);
   fastify.get(
-  "/check-id/:employeeId",
-  {
-    schema: {
-      tags: ["Employee"],
-      summary: "Check if Employee ID exists",
-      description: "Checks if a given employee ID is already registered in the system.",
-      params: {
-        type: "object",
-        required: ["employeeId"],
-        properties: {
-          employeeId: {
-            type: "string",
-            description: "Employee ID to check",
-            example: "EMP123",
+    "/check-id/:employeeId",
+    {
+      schema: {
+        tags: ["Employee"],
+        summary: "Check if Employee ID exists",
+        description:
+          "Checks if a given employee ID is already registered in the system.",
+        params: {
+          type: "object",
+          required: ["employeeId"],
+          properties: {
+            employeeId: {
+              type: "string",
+              description: "Employee ID to check",
+              example: "EMP123",
+            },
           },
         },
-      },
-      response: {
-        200: {
-          description: "Check result",
-          type: "object",
-          properties: {
-            exists: { type: "boolean", example: true },
-            message: { type: "string", example: "Employee ID already exists" },
+        response: {
+          200: {
+            description: "Check result",
+            type: "object",
+            properties: {
+              exists: { type: "boolean", example: true },
+              message: {
+                type: "string",
+                example: "Employee ID already exists",
+              },
+            },
           },
-        },
-        500: {
-          description: "Server error",
-          type: "object",
-          properties: {
-            message: { type: "string" },
-            error: { type: "string" },
+          500: {
+            description: "Server error",
+            type: "object",
+            properties: {
+              message: { type: "string" },
+              error: { type: "string" },
+            },
           },
         },
       },
     },
-  },
-  employeeController.checkEmployeeId
-)
+    employeeController.checkEmployeeId
+  );
 };
-
-;
 
 module.exports = employeeRoutes;
