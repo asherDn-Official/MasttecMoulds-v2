@@ -190,10 +190,13 @@ exports.getAll = async (req, reply) => {
       filter.$or = [
         { employeeName: { $regex: searchRegex } },
         { employeeId: { $regex: searchRegex } },
+        { designation: { $regex: searchRegex } },
+        { department: { $regex: searchRegex } },
         { mobileNumber: { $regex: searchRegex } },
         { mailId: { $regex: searchRegex } },
         { PANNumber: { $regex: searchRegex } },
         { aadhaarNo: { $regex: searchRegex } },
+        { qualification: { $regex: searchRegex } }
       ];
     }
 
