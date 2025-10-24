@@ -523,13 +523,25 @@ calculateOT2Hours(timeIn, timeOut, workedHrs, status, ot2, shiftType = null) {
     return parseFloat((ot1Hours * hourlyRate * 1.25).toFixed(2));
   }
 
-  // Calculate hourly rate based on monthly salary
-  calculateHourlyRate(monthlySalary) {
+  /**
+   * Rounds a number to the nearest 0.5 increment.
+   * e.g., 4.10 -> 4.0, 4.40 -> 4.5, 4.80 -> 5.0
+   * @param {number} hours - The hours to round.
+   * @returns {number} The rounded hours.
+   */
+  roundToNearestHalfHour(hours) {
+    return Math.round(hours * 2) / 2;
+  }
+
+  // Calculate hourly rate based on monthly salary, adjusted for late hours
+  calculateHourlyRate(monthlySalary, totalLateHours = 0) {
     // Assuming 26 working days per month, 8 hours per day
     const workingDaysPerMonth = 26;
     const hoursPerDay = 8;
-    const totalHoursPerMonth = workingDaysPerMonth * hoursPerDay;
-    return monthlySalary / totalHoursPerMonth;
+    const baseTotalHoursPerMonth = workingDaysPerMonth * hoursPerDay;
+    const roundedLateHours = this.roundToNearestHalfHour(totalLateHours);
+    const effectiveHoursPerMonth = baseTotalHoursPerMonth - roundedLateHours;
+    return monthlySalary / effectiveHoursPerMonth;
   }
 
   // Calculate monthly OT hours from daily attendance
@@ -662,10 +674,13 @@ calculateOT2Hours(timeIn, timeOut, workedHrs, status, ot2, shiftType = null) {
       const esicAmount = parseFloat(employeeData.esic || 0);
       const allowance = parseFloat(employeeData.allowance || 0);
 
+      // Calculate monthly late hours first
+      const totalLateHours = this.calculateMonthlyLateHours(dailyAttendance);
+
       // Calculate hourly rate
-      const hourlyRate = this.calculateHourlyRate(basicSalary);
+      const hourlyRate = this.calculateHourlyRate(basicSalary, totalLateHours);
       console.log(
-        `Employee ${employeeId}: Basic Salary: ${basicSalary}, EPF: ${epfAmount}, HRA: ${hraAmount}, ESIC: ${esicAmount}, Hourly rate: ${hourlyRate}`
+        `Employee ${employeeId}: Basic Salary: ${basicSalary}, EPF: ${epfAmount}, HRA: ${hraAmount}, ESIC: ${esicAmount}, Hourly rate: ${hourlyRate}, Late Hours: ${totalLateHours}`
       );
 
       // Get present and absent days from attendance summary
@@ -680,9 +695,6 @@ calculateOT2Hours(timeIn, timeOut, workedHrs, status, ot2, shiftType = null) {
       const otHours = this.calculateMonthlyOTHours(dailyAttendance);
       const totalOT1Hours = otHours.totalOT1Hours;
       const totalOT2Hours = otHours.totalOT2Hours;
-
-      // Calculate monthly late hours
-      const totalLateHours = this.calculateMonthlyLateHours(dailyAttendance);
 
       // Calculate OT amounts
       const ot1Amount = this.calculateOT1Amount(totalOT1Hours, hourlyRate);
@@ -703,7 +715,7 @@ calculateOT2Hours(timeIn, timeOut, workedHrs, status, ot2, shiftType = null) {
         absent: absentDays.toString(),
         basic: basicSalary.toString(),
         houseRent: absentDays > 9 ? "0" : hraAmount.toString(),
-        EPF: totalSalary > 15000 ? (basicSalary * 0.12).toString() : "0",
+        EPF: totalSalary > 15000 ? (basicSalary * 0.12).toString() : "1800",
         ESIC: totalSalary > 210000 ? esicAmount.toString() : "0",
         incentives: "0",
         allowances: allowance.toString(),

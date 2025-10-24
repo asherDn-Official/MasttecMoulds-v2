@@ -32,7 +32,6 @@ const employeeRoutes = async (fastify, options) => {
             properties: {
               value: {
                 type: "string",
-                minLength: 3,
                 maxLength: 20,
                 description: "Unique Employee ID",
                 example: "EMP123",
@@ -117,26 +116,29 @@ const employeeRoutes = async (fastify, options) => {
               },
             },
           },
-          bankDetails: {
+          // ✅ Bank details are sent as fields with bracket notation in multipart/form-data
+          'bankDetails[bankName]': {
             type: "object",
             properties: {
-              value: {
-                type: "object",
-                properties: {
-                  bankName: { type: "string", example: "SBI" },
-                  bankBranch: { type: "string", example: "Bangalore Main" },
-                  bankAccountNumber: {
-                    type: "string",
-                    pattern: "^\\d{9,18}$",
-                    example: "123456789012",
-                  },
-                  bankIFSCCode: {
-                    type: "string",
-                    pattern: "^[A-Z]{4}0[A-Z0-9]{6}$",
-                    example: "SBIN0001234",
-                  },
-                },
-              },
+              value: { type: "string", example: "SBI" },
+            },
+          },
+          'bankDetails[bankBranch]': {
+            type: "object",
+            properties: {
+              value: { type: "string", example: "Bangalore Main" },
+            },
+          },
+          'bankDetails[bankAccountNumber]': {
+            type: "object",
+            properties: {
+              value: { type: "string", pattern: "^\\d{9,18}$", example: "123456789012" },
+            },
+          },
+          'bankDetails[bankIFSCCode]': {
+            type: "object",
+            properties: {
+              value: { type: "string", pattern: "^[A-Z]{4}0[A-Z0-9]{6}$", example: "SBIN0001234" },
             },
           },
           PANNumber: {
@@ -771,7 +773,7 @@ const employeeRoutes = async (fastify, options) => {
           employeeId: {
             type: "object",
             properties: {
-              value: { type: "string", minLength: 3, maxLength: 20 },
+              value: { type: "string", maxLength: 20 },
             },
           },
           department: {
@@ -794,23 +796,45 @@ const employeeRoutes = async (fastify, options) => {
             type: "object",
             properties: { value: { type: "string", maxLength: 255 } },
           },
+          // ✅ Bank details are sent as separate fields in multipart/form-data
           bankName: {
             type: "object",
-            properties: { value: { type: "string", maxLength: 30 } },
+            properties: {
+              value: { type: "string", maxLength: 100, example: "SBI" },
+            },
           },
           bankBranch: {
             type: "object",
-            properties: { value: { type: "string", maxLength: 30 } },
+            properties: {
+              value: {
+                type: "string",
+                maxLength: 100,
+                example: "Bangalore Main",
+              },
+            },
           },
           bankAccountNumber: {
             type: "object",
-            properties: { value: { type: "string", maxLength: 30, pattern: "^\\d{9,18}$"  } },
+            properties: {
+              value: {
+                type: "string",
+                maxLength: 30,
+                pattern: "^\\d{9,18}$",
+                example: "123456789012",
+              },
+            },
           },
           bankIFSCCode: {
             type: "object",
-            properties: { value: { type: "string", maxLength: 30,pattern: "^[A-Z]{4}0[A-Z0-9]{6}$" } },
+            properties: {
+              value: {
+                type: "string",
+                maxLength: 30,
+                pattern: "^[A-Z]{4}0[A-Z0-9]{6}$",
+                example: "SBIN0001234",
+              },
+            },
           },
-      
           PANNumber: {
             type: "object",
             properties: {

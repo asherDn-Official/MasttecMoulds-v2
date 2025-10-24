@@ -86,7 +86,12 @@ exports.create = async (req, reply) => {
       mobileNumber: body.mobileNumber?.value,
       mailId: body.mailId?.value,
       address: body.address?.value,
-      bankDetails: body.bankDetails?.value,
+      bankDetails: { // ✅ Access bank details using bracket notation from the multipart body
+        bankName: body['bankDetails[bankName]']?.value,
+        bankBranch: body['bankDetails[bankBranch]']?.value,
+        bankAccountNumber: body['bankDetails[bankAccountNumber]']?.value,
+        bankIFSCCode: body['bankDetails[bankIFSCCode]']?.value,
+      },
       PANNumber: body.PANNumber?.value,
       aadhaarNo: body.aadhaarNo?.value,
       UANNo: body.UANNo?.value,
@@ -163,62 +168,61 @@ exports.create = async (req, reply) => {
 };
 
 
-exports.getAll = async (req, reply) => {
-  try {
-    const {
-      search,
-      department,
-      designation,
-      status,
-      page = 1,
-      limit = 10,
-    } = req.query;
+  exports.getAll = async (req, reply) => {
+    try {
+      const {
+        search,
+        department,
+        designation,
+        status,
+        page = 1,
+        limit = 10,
+      } = req.query;
 
-    const pageNum = parseInt(page, 10);
-    const limitNum = parseInt(limit, 10);
-    const skip = (pageNum - 1) * limitNum;
+      const pageNum = parseInt(page, 10);
+      const limitNum = parseInt(limit, 10);
+      const skip = (pageNum - 1) * limitNum;
 
-    const filter = {};
+      const filter = {};
 
-    if (department) filter.department = department;
-    if (designation) filter.designation = designation;
-    if (status !== undefined) filter.status = status === "true";
+      if (department) filter.department = department;
+      if (designation) filter.designation = designation;
+      if (status !== undefined) filter.status = status === "true";
 
-    if (search) {
-      const escapedSearch = search.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
-      const searchRegex = new RegExp(escapedSearch, "i");
-      filter.$or = [
-        { employeeName: { $regex: searchRegex } },
-        { employeeId: { $regex: searchRegex } },
-        { designation: { $regex: searchRegex } },
-        { department: { $regex: searchRegex } },
-        { mobileNumber: { $regex: searchRegex } },
-        { mailId: { $regex: searchRegex } },
-        { PANNumber: { $regex: searchRegex } },
-        { aadhaarNo: { $regex: searchRegex } },
-        { qualification: { $regex: searchRegex } }
-      ];
+      if (search) {
+        const escapedSearch = search.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
+        const searchRegex = new RegExp(escapedSearch, "i");
+        filter.$or = [
+          { employeeName: { $regex: searchRegex } },
+          { employeeId: { $regex: searchRegex } },
+          { designation: { $regex: searchRegex } },
+          { department: { $regex: searchRegex } },
+          { mobileNumber: { $regex: searchRegex } },
+          { mailId: { $regex: searchRegex } },
+          { PANNumber: { $regex: searchRegex } },
+          { aadhaarNo: { $regex: searchRegex } },
+        ];
+      }
+
+      const [employees, totalEmployees] = await Promise.all([
+        Employee.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limitNum),
+        Employee.countDocuments(filter),
+      ]);
+
+      reply.code(200).send({
+        status: "success",
+        pagination: {
+          totalItems: totalEmployees,
+          totalPages: Math.ceil(totalEmployees / limitNum),
+          currentPage: pageNum,
+        },
+        data: employees,
+      });
+    } catch (error) {
+      req.log.error(error);
+      reply.code(500).send({ message: "Server error", error: error.message });
     }
-
-    const [employees, totalEmployees] = await Promise.all([
-      Employee.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limitNum),
-      Employee.countDocuments(filter),
-    ]);
-
-    reply.code(200).send({
-      status: "success",
-      pagination: {
-        totalItems: totalEmployees,
-        totalPages: Math.ceil(totalEmployees / limitNum),
-        currentPage: pageNum,
-      },
-      data: employees,
-    });
-  } catch (error) {
-    req.log.error(error);
-    reply.code(500).send({ message: "Server error", error: error.message });
-  }
-};
+  };
 exports.getByEmployeeId = async (req, reply) => {
   try {
     const { employeeId } = req.params;
@@ -358,6 +362,13 @@ exports.update = async (req, reply) => {
         }
       }
     }
+
+    // ✅ Manually construct bankDetails from individual fields
+    employee.bankDetails.bankName = body.bankName?.value ?? employee.bankDetails.bankName;
+    employee.bankDetails.bankBranch = body.bankBranch?.value ?? employee.bankDetails.bankBranch;
+    employee.bankDetails.bankAccountNumber = body.bankAccountNumber?.value ?? employee.bankDetails.bankAccountNumber;
+    employee.bankDetails.bankIFSCCode = body.bankIFSCCode?.value ?? employee.bankDetails.bankIFSCCode;
+
 
     const updatedEmployee = await employee.save();
 
