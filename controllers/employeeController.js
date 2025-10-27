@@ -319,9 +319,23 @@ exports.update = async (req, reply) => {
     const deleteOldFile = (filePath) => {
       if (!filePath) return;
       try {
-        const absolutePath = path.join(__dirname, "..", filePath.replace(/^\/+/, ""));
+        // Extract the relative path from the full URL or handle relative paths directly
+        let relativePath;
+        const urlMatch = filePath.match(/^(https?:\/\/[^/]+)?(\/uploads\/.*)$/);
+
+        if (urlMatch && urlMatch[2]) { // It's a full URL, extract the /uploads/ part
+            relativePath = urlMatch[2];
+        } else if (filePath.startsWith('/uploads/')) { // It's already a relative path starting with /uploads/
+            relativePath = filePath;
+        } else {
+            console.warn(`⚠️ Could not determine file path for deletion: ${filePath}`);
+            return;
+        }
+
+        const absolutePath = path.join(__dirname, "..", relativePath);
         if (fs.existsSync(absolutePath)) {
           fs.unlinkSync(absolutePath);
+          console.log(`✓ Deleted old file: ${absolutePath}`);
         }
       } catch (err) {
         console.warn(`⚠️ Failed to delete old file: ${filePath}`, err.message);
@@ -336,18 +350,26 @@ exports.update = async (req, reply) => {
       if (part && typeof part.toBuffer === "function") {
         const newFilePath = await saveFile(part, req);
 
-        if (key.startsWith("documents.")) {
-          const docKey = key.split(".")[1];
+        // Handle employeePicture
+        if (key === "employeePicture") {
+          if (employee.employeePicture) {
+            deleteOldFile(employee.employeePicture);
+          }
+          employee.employeePicture = newFilePath;
+        }
+        // Handle documents (e.g., documents[addressProof])
+        else if (key.startsWith("documents[")) {
+          const docKeyMatch = key.match(/^documents\[([^\]]+)\]$/);
+          if (!docKeyMatch || !docKeyMatch[1]) {
+            console.warn(`⚠️ Could not parse document key from: ${key}`);
+            continue;
+          }
+          const docKey = docKeyMatch[1];
           if (employee.documents?.[docKey]) {
             deleteOldFile(employee.documents[docKey]);
           }
           if (!employee.documents) employee.documents = {};
           employee.documents[docKey] = newFilePath;
-        } else if (key === "employeePicture") {
-          if (employee.employeePicture) {
-            deleteOldFile(employee.employeePicture);
-          }
-          employee.employeePicture = newFilePath;
         }
       }
 

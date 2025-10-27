@@ -716,7 +716,7 @@ calculateOT2Hours(timeIn, timeOut, workedHrs, status, ot2, shiftType = null) {
         basic: basicSalary.toString(),
         houseRent: absentDays > 9 ? "0" : hraAmount.toString(),
         EPF: totalSalary > 15000 ? (basicSalary * 0.12).toString() : "1800",
-        ESIC: totalSalary > 210000 ? esicAmount.toString() : "0",
+        ESIC: totalSalary > 21000 ? esicAmount.toString() : "0",
         incentives: "0",
         allowances: allowance.toString(),
         advance: "0",
