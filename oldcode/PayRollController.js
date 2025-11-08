@@ -639,6 +639,7 @@ exports.sendPayslipEmail = async (req, res) => {
     }
 
     const employee = await Employee.findOne({ employeeId });
+    console.log(`Sending payslip email for employee: ${employee.employeeName} (ID: ${employee})`);
     if (!employee) {
       return res.status(404).json({
         success: false,

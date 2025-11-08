@@ -164,76 +164,7 @@ class PayrollService {
    * @param {string} shiftType - Optional shift type parameter
    * @returns {number} OT1 hours
    */
-  // calculateOT1Hours(timeIn, timeOut, status, ot1, shiftType = null) {
-  //   // If OT1 is already calculated in attendance record, use that
-  //   if (ot1 && ot1.trim() !== "") {
-  //     // Handle different time formats (HH:MM or decimal)
-  //     if (ot1.includes(":")) {
-  //       const [hours, minutes] = ot1.split(":").map(Number);
-  //       return isNaN(hours) || isNaN(minutes) ? 0 : hours + minutes / 60;
-  //     } else {
-  //       const hours = parseFloat(ot1);
-  //       return isNaN(hours) ? 0 : hours;
-  //     }
-  //   }
-
-  //   // If status is not present, return 0
-  //   if (status !== "PRE" && status !== "P") {
-  //     return 0;
-  //   }
-
-  //   // Parse timeOut
-  //   if (!timeOut || timeOut.trim() === "") {
-  //     return 0;
-  //   }
-
-  //   try {
-  //     // Determine shift type based on timeIn and timeOut
-  //     const shiftConfig = shiftType
-  //       ? this.getShiftConfigByType(shiftType)
-  //       : this.determineShiftType(timeIn, timeOut);
-
-  //     const [outHours, outMinutes] = timeOut.split(":").map(Number);
-
-  //     // Check if parsing was successful
-  //     if (isNaN(outHours) || isNaN(outMinutes)) {
-  //       console.log(`Invalid timeOut format: ${timeOut}`);
-  //       return 0;
-  //     }
-
-  //     // Calculate minutes after shift end time
-  //     let totalOutMinutes = outHours * 60 + outMinutes;
-  //     let totalShiftEndMinutes =
-  //       shiftConfig.endTime.hours * 60 + shiftConfig.endTime.minutes;
-
-  //     // Handle night shift crossover (ends at 3 AM next day)
-  //     if (shiftConfig.type === "night") {
-  //       if (totalOutMinutes < 720) {
-  //         // If timeOut is in AM (before 12:00 PM)
-  //         totalOutMinutes += 24 * 60; // Add 24 hours to handle next day
-  //       }
-  //       totalShiftEndMinutes += 24 * 60; // Night shift end time is next day
-  //     }
-
-  //     // Only count OT if worked more than 30 minutes after shift end time
-  //     if (totalOutMinutes > totalShiftEndMinutes + 30) {
-  //       const overtimeMinutes = totalOutMinutes - totalShiftEndMinutes;
-  //       const otHours = parseFloat((overtimeMinutes / 60).toFixed(2));
-
-  //       console.log(
-  //         `OT1 Calculation - Shift: ${shiftConfig.description}, End: ${shiftConfig.endTime.hours}:${shiftConfig.endTime.minutes}, Out: ${timeOut}, OT: ${otHours}h`
-  //       );
-  //       return otHours;
-  //     }
-  //   } catch (error) {
-  //     console.error(
-  //       `Error calculating OT1 hours for timeOut ${timeOut}:`,
-  //       error
-  //     );
-  //   }
-
-  //   return 0;
-  // }
+ 
 calculateOT1Hours(timeIn, timeOut, status, ot1, shiftType = null) {
   if (ot1 && ot1.trim() !== "") {
     if (ot1.includes(":")) {
@@ -304,9 +235,9 @@ calculateOT1Hours(timeIn, timeOut, status, ot1, shiftType = null) {
     const shiftConfigs = {
       general: {
         type: "general",
-        startTime: { hours: 9, minutes: 30 },
+        startTime: { hours: 9, minutes: 0 },
         endTime: { hours: 17, minutes: 30 },
-        description: "General Shift (9:30 AM - 5:30 PM)",
+        description: "General Shift (9:00 AM - 5:30 PM)",
       },
       "12hour_day": {
         type: "12hour_day",
@@ -588,7 +519,7 @@ calculateOT2Hours(timeIn, timeOut, workedHrs, status, ot2, shiftType = null) {
 
   // Calculate OT2 amount (double time)
   calculateOT2Amount(ot2Hours, hourlyRate) {
-    return parseFloat((ot2Hours * hourlyRate * 2).toFixed(2));
+    return parseFloat((ot2Hours * hourlyRate *  1.75).toFixed(2));
   }
 
   async generatePayrollFromAttendance(attendanceRecord, employeeData = null) {
@@ -668,7 +599,7 @@ calculateOT2Hours(timeIn, timeOut, workedHrs, status, ot2, shiftType = null) {
       }
 
       // Get salary, EPF, and ESIC from employee model
-      const basicSalary = parseFloat(employeeData.salary / 2 || 0);
+      const basicSalary = parseFloat(employeeData.salary || 0);
       const hraAmount = parseFloat(employeeData.hra || 0);
       const epfAmount = parseFloat(employeeData.epf || 0);
       const esicAmount = parseFloat(employeeData.esic || 0);

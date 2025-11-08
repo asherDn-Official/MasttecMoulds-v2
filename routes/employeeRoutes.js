@@ -117,28 +117,36 @@ const employeeRoutes = async (fastify, options) => {
             },
           },
           // ✅ Bank details are sent as fields with bracket notation in multipart/form-data
-          'bankDetails[bankName]': {
+          "bankDetails[bankName]": {
             type: "object",
             properties: {
               value: { type: "string", example: "SBI" },
             },
           },
-          'bankDetails[bankBranch]': {
+          "bankDetails[bankBranch]": {
             type: "object",
             properties: {
               value: { type: "string", example: "Bangalore Main" },
             },
           },
-          'bankDetails[bankAccountNumber]': {
+          "bankDetails[bankAccountNumber]": {
             type: "object",
             properties: {
-              value: { type: "string", pattern: "^\\d{9,18}$", example: "123456789012" },
+              value: {
+                type: "string",
+                pattern: "^\\d{9,18}$",
+                example: "123456789012",
+              },
             },
           },
-          'bankDetails[bankIFSCCode]': {
+          "bankDetails[bankIFSCCode]": {
             type: "object",
             properties: {
-              value: { type: "string", pattern: "^[A-Z]{4}0[A-Z0-9]{6}$", example: "SBIN0001234" },
+              value: {
+                type: "string",
+                pattern: "^[A-Z]{4}0[A-Z0-9]{6}$",
+                example: "SBIN0001234",
+              },
             },
           },
           PANNumber: {
@@ -795,6 +803,18 @@ const employeeRoutes = async (fastify, options) => {
           address: {
             type: "object",
             properties: { value: { type: "string", maxLength: 255 } },
+          },
+          dateOfBirth: {
+            type: "object",
+            properties: {
+              value: { type: "string", format: "date", example: "1995-08-15" },
+            },
+          },
+          dateOfJoining: {
+            type: "object",
+            properties: {
+              value: { type: "string", format: "date", example: "2023-05-01" },
+            },
           },
           // ✅ Bank details are sent as separate fields in multipart/form-data
           bankName: {

@@ -612,8 +612,15 @@ async function sendPayslipEmail(request, reply) {
       });
     }
 
+    // Use Fastify's logger to ensure output is captured
+    request.log.info({
+      msg: "--- DEBUG: Preparing to send payslip ---",
+      employeeId: employee,
+      mailId: employee.mailId,
+    });
     // Generate HTML and PDF
     const payslipHTML = createPayslipHTML(employee, payrun);
+    console.log("88888888888888888",employee,payrun)
     const pdfBuffer = await generatePDFBufferFromHTML(payslipHTML);
 
     // Create a pending record first
@@ -753,8 +760,8 @@ async function sendBulkPayslipEmails(request, reply) {
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: process.env.EMAIL_USER || "your-email@gmail.com",
-        pass: process.env.EMAIL_PASS || "your-app-password",
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
       },
     });
 
@@ -805,10 +812,10 @@ async function sendBulkPayslipEmails(request, reply) {
           });
           continue;
         }
-
+        console.log("88888888888888888", employee, payrun);
         // Create HTML payslip
         const payslipHTML = createPayslipHTML(employee, payrun);
-
+        console.log("88888888888888888", employee, payrun);
         // Email options
         const mailOptions = {
           from: process.env.EMAIL_USER || "your-email@gmail.com",
@@ -821,21 +828,21 @@ async function sendBulkPayslipEmails(request, reply) {
 
         // Send email
         await transporter.sendMail(mailOptions);
-// ✅ Update payroll record to mark payslip as sent
-await Payroll.updateOne(
-  {
-    employeeId,
-    "payrunHistory.salaryMonth": salaryMonth,
-    "payrunHistory.salaryYear": salaryYear,
-  },
-  {
-    $set: {
-      "payrunHistory.$.payslipSent": true,
-      "payrunHistory.$.payslipSentAt": new Date(),
-      "payrunHistory.$.emailResponse": `Payslip sent successfully to ${employee.mailId}`,
-    },
-  }
-);
+        // ✅ Update payroll record to mark payslip as sent
+        await Payroll.updateOne(
+          {
+            employeeId,
+            "payrunHistory.salaryMonth": salaryMonth,
+            "payrunHistory.salaryYear": salaryYear,
+          },
+          {
+            $set: {
+              "payrunHistory.$.payslipSent": true,
+              "payrunHistory.$.payslipSentAt": new Date(),
+              "payrunHistory.$.emailResponse": `Payslip sent successfully to ${employee.mailId}`,
+            },
+          }
+        );
 
         results.successful.push({
           employeeId,
@@ -908,7 +915,18 @@ async function getEmailResults(request, reply) {
 
 // Create payslip HTML template
 function createPayslipHTML(employee, payrun) {
+  console.log("createPayslipHTML function called", employee, payrun);
+  console.log(
+    "--- DEBUG: PAYSLIP DATA ---",
+    JSON.stringify({ employee, payrun }, null, 2)
+  );
   const monthName = getMonthName(payrun.salaryMonth);
+  const perDaySalary = (parseFloat(employee?.salary || 0) / 30).toFixed(2);
+  const perHourSalary = (perDaySalary / 8).toFixed(2);
+  const formattedDateOfJoining = employee.dateOfJoining
+    ? formatDate(employee.dateOfJoining)
+    : "N/A";
+
 
   return `
   <!DOCTYPE html>
@@ -1021,33 +1039,33 @@ function createPayslipHTML(employee, payrun) {
               <th>Name</th>
               <td>${employee?.employeeName}</td>
               <th>Aadhaar No.</th>
-              <td>${employee?.employeeAadhaarNo || "N/A"}</td>
+              <td>${employee?.aadhaarNo || "N/A"}</td>
             </tr>
             <tr>
               <th>Designation</th>
               <td>${employee?.designation}</td>
               <th>Bank A/c No.</th>
-              <td>${employee?.bankAccountNumber || "N/A"}</td>
+              <td>${employee?.bankDetails?.bankAccountNumber || "N/A"}</td>
             </tr>
             <tr>
               <th>Department</th>
               <td>${employee?.department}</td>
               <th>Bank & Branch</th>
-              <td>${employee?.bankName || "N/A"}/${
-    employee?.bankBranch || "N/A"
+              <td>${employee?.bankDetails?.bankName || "N/A"} / ${
+    employee?.bankDetails?.bankBranch || "N/A"
   }</td>
             </tr>
             <tr>
               <th>Date of Joining</th>
-              <td>${employee?.doj || "N/A"}</td>
+              <td>${formattedDateOfJoining}</td>
               <th>IFSC Code</th>
-              <td>${employee?.bankIFSCCode || "N/A"}</td>
+              <td>${employee?.bankDetails?.bankIFSCCode || "N/A"}</td>
             </tr>
             <tr>
               <th>Increment on Salary</th>
               <td>N/A</td>
               <th>EPF Member ID</th>
-              <td>${parseFloat(payrun.EPF || 0).toFixed(2)}</td>
+              <td>${employee?.epfId || "N/A"}</td>
             </tr>
             <tr>
               <th>Payable Days</th>
@@ -1057,13 +1075,13 @@ function createPayslipHTML(employee, payrun) {
             </tr>
             <tr>
               <th>Per Day Salary</th>
-              <td>${(parseFloat(employee?.salary || 0) / 30).toFixed(2)}</td>
+              <td>${perDaySalary}</td>
               <th>ESIC No</th>
-              <td>${parseFloat(payrun.ESIC || 0).toFixed(2)}</td>
+              <td>${employee?.esicId || "N/A"}</td>
             </tr>
             <tr>
               <th>1 Hour salary</th>
-              <td>${(parseFloat(employee?.salary || 0) / 30).toFixed(2)}</td>
+              <td>${perHourSalary}</td>
               <th>PAN NO</th>
               <td>${employee?.PANNumber || "N/A"}</td>
             </tr>
